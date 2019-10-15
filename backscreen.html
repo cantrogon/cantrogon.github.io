@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Tester</title>
+		<link rel="shortcut icon" type="image/png" href="favicon.png"/>
+		<style type="text/css">
+			body {font-family: sans-serif; text-align: center;}
+			h1 {transform: rotate(180deg); font-size: 70px;}
+			h2 {font-weight: normal;}
+			#timer {font-size: 120px;}
+		</style>
+	</head>
+	<body>
+		<h1>Hello World</h1>
+		<h2>Time until this countdown timer reaches zero:</h2>
+		<span id="timer"></span>
+		<script type="text/javascript">
+			// coutdown timer, pretty much copied from w3schools
+			document.body.onload = function() {
+				var timer = document.getElementById('timer');
+				var end = new Date("Sep 20, 2019 08:15:00").getTime();
+				var x = setInterval(function() {
+					var cur = new Date().getTime();
+					var d = end - cur;
+					var day = Math.floor(d / (1000 * 60 * 60 * 24));
+					var hrs = Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+					var min = Math.floor((d % (1000 * 60 * 60)) / (1000 * 60));
+					var sec = Math.floor((d % (1000 * 60)) / 1000);
+					timer.innerHTML = day + "d " + hrs + "h " + min + "m " + sec + "s ";
+					if (d < 0) {
+						clearInterval(x);
+						timer.innerHTML = "∞";
+					}
+				}, 1000);
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,10 @@
+<div></div><style>body{background:no-repeat 50% 50%;background-size:cover;}</style>
+<script>
+	var repeat = 200, back = "";
+	for (var i = repeat; i > 0; i--) {
+		var file = document.location.href.match(/\/Users\/.+?\//) + "Pictures/Screenshots/Screenshot (" + i + ").png";
+		back += "url('" + file + "')";
+		if (i != 1) back += ",";
+	}
+	document.body.style.backgroundImage = back;
+</script>
