@@ -6,9 +6,12 @@ window.onload = function() {
 		document.documentElement.style.setProperty('--vh', `${vh}px`);
 	});
 
-	var notes = [], fills = [], playStarted = false,
+	var notes = [], playStarted = false, mouseDown = false,
 		keys = ['a','w','s','e','d','f','t','g','y','h','u','j','k'],
 		rate = 1;
+
+	document.body.addEventListener("mousedown", e => mouseDown = true);
+	document.body.addEventListener("mouseup", e => mouseDown = false);
 
 	for (var i = 0; i <= 12; i++) {
 		// preload audio
@@ -49,10 +52,12 @@ window.onload = function() {
 			fillStatus: 0
 		});
 	}
-
+	
 	notes.forEach((a,i) => {
 		a.note.addEventListener("mousedown", e => playStart(i));
 		a.note.addEventListener("mouseup", e => playEnd(i));
+		a.note.addEventListener("mouseover", e => {if (mouseDown) playStart(i)});
+		a.note.addEventListener("mouseout", e => playEnd(i));
 		a.note.addEventListener("touchstart", e => {e.preventDefault(); e.stopPropagation(); playStart(i)});
 		a.note.addEventListener("touchend", e => {e.preventDefault(); e.stopPropagation(); playEnd(i)});
 		a.note.addEventListener("touchmove", e => {e.preventDefault(); e.stopPropagation();});
