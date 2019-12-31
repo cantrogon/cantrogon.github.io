@@ -15,10 +15,10 @@
 		<h2>Time until this countdown timer reaches zero:</h2>
 		<span id="timer"></span>
 		<script type="text/javascript">
-			// coutdown timer, pretty much copied from w3schools
+			// coutdown timer, pretty much just copied from w3schools
 			document.body.onload = function() {
 				var timer = document.getElementById('timer');
-				var end = new Date("Sep 20, 2019 08:15:00").getTime();
+				var end = new Date("Dec 31, 2020 23:59:59").getTime();
 				var x = setInterval(function() {
 					var cur = new Date().getTime();
 					var d = end - cur;
