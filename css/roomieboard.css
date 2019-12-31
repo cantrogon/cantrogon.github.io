@@ -7,7 +7,7 @@ body {margin: 0;}
 	position: relative;
 	border: 10px solid black;
 	box-sizing: border-box;
-	font: 60px Verdana;
+	font: 60px Verdana, sans-serif;
 }
 
 #white-box, #black-box {
