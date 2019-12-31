@@ -1,9 +1,14 @@
 window.onload = function() {
 
-	var notes = [], fills = [];
-	var keys = ['a','w','s','e','d','f','t','g','y','h','u','j','k'];
-	var playStarted = false;
-	var rate = 1;
+	// correct mobile height
+	window.addEventListener('resize', () => {
+		let vh = window.innerHeight * 0.01;
+		document.documentElement.style.setProperty('--vh', `${vh}px`);
+	});
+
+	var notes = [], fills = [], playStarted = false,
+		keys = ['a','w','s','e','d','f','t','g','y','h','u','j','k'],
+		rate = 1;
 
 	for (var i = 0; i <= 12; i++) {
 		// preload audio
