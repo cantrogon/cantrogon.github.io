@@ -1,0 +1,175 @@
+<div id="main">
+</div>
+
+<style type="text/css">
+
+#main {
+	position: relative;
+	margin: 0 auto;
+	background: black;
+}
+
+canvas {
+	display: block;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+</style>
+
+<script type="text/javascript">
+	
+var paused = false,
+	cw = 800,
+	ch = 600,
+	canvas = [],
+	fpsBase = 30,
+
+	fps = 10,
+	res = 0.4,
+	showPoints = true,
+	mbm = 0;
+
+var mbmList = [
+	"normal",
+	"multiply",
+	"screen",
+	"overlay",
+	"darken",
+	"lighten",
+	"color-dodge",
+	"color-burn",
+	"hard-light",
+	"soft-light",
+	"difference",
+	"exclusion"
+];
+
+document.getElementById('main').style.width = cw;
+document.getElementById('main').style.height = ch;
+
+setPoints(0,200,80,.2);
+setPoints(0,500,80,.2);
+// setPoints(100,300);
+// setPoints(300,400,80,.1);
+// setPoints(500,400,80,.1);
+// setPoints(400,400-Math.sqrt(3)*100,80,.1);
+
+// setPoints(0,300,50,1,10);
+// setPoints(0,350,60,.5);
+// setPoints(300,500,70);
+// setPoints(600,250,40,2);
+// setPoints(300,100);
+
+
+
+function setPoints(x=0,y=0,wl=80,f=.5,offset=0) {
+	// document.getElementById('main').innerHTML += '<canvas id="canvas' + canvas.length + '" width="' + cw + '" height="' + ch + '" style="mix-blend-mode:' + mbmList[mbm] + ';"></canvas>';
+	document.getElementById('main').innerHTML += '<canvas id="canvas'+canvas.length+'"></canvas>';
+	var props = {
+		num: canvas.length,
+		x: x,
+		y: y,
+		wl: wl,
+		offset: offset,
+		spd: f*wl/fpsBase*(fpsBase/fps),
+		ad: 0
+	}
+	var cvs = document.getElementById('canvas'+canvas.length);
+	cvs.width = cw;
+	cvs.height = ch;
+	cvs.style.mixBlendMode = mbmList[mbm];
+	canvas.push(props);
+}
+
+var cans = document.getElementsByTagName('canvas');
+for (var i = 0; i < cans.length; i++) {
+	cans[i].style.opacity = 1-1/cans.length*i;
+}
+
+
+
+function drawDots() {
+	document.getElementById('main').innerHTML += '<canvas id="canvasPoints" width="' + cw + '" height="' + ch + '"></canvas>';
+	var cvs = document.getElementById('canvasPoints'),
+		ctx = cvs.getContext("2d");
+
+	for (var i = 0; i < canvas.length; i++) {
+		drawCirc(ctx,canvas[i].x,canvas[i].y,5,'red');
+	}
+}
+
+drawDots();
+
+if (showPoints)	document.getElementById('canvasPoints').style.display = "block";
+else 			document.getElementById('canvasPoints').style.display = "none";
+
+setInterval(function() {
+	if (!paused) {
+		for (var i = 0; i < canvas.length; i++) {
+			drawWaves(canvas[i]);
+		}
+	}
+}, 1000/fps);
+
+
+function drawWaves(can) {
+	var cvs = document.getElementById("canvas" + can.num),
+		ctx = cvs.getContext("2d"),
+		posx = can.x,
+		posy = can.y,
+		wl = can.wl,
+		offset = can.offset;
+
+
+	for (var i = Math.ceil(Math.sqrt(cw*cw+ch*ch)*1.1*res) - 1; i >= 0; i--) {
+		var j = getSine(i/res-can.ad,255,wl,offset);
+		drawCirc(ctx,posx,posy,i/res,'rgb('+j+','+j+','+j+')');
+	// if (i==50) drawCirc(ctx,posx,posy,i/res+j,'rgb(50,100,12)');
+	}
+	can.ad += can.spd; if (can.ad >= wl) can.ad -= wl;
+
+	// console.log(can.ad);
+	// paused = true;
+
+}
+
+
+function drawCirc(ctx,x,y,r,color,type = "fill") {
+	ctx.beginPath();
+	ctx.fillStyle = color;
+	ctx.strokeStyle = color;
+	ctx.arc(x,y,r,0,2*Math.PI);
+	if (type == "fill") ctx.fill();
+	else if (type == "stroke") ctx.stroke();
+}
+
+function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+}
+
+
+function getSine(x,A,w,p=0) {
+	return A/2*Math.sin(x*2*Math.PI/w-p)+A/2;
+}
+
+
+
+function togglePause() {
+	paused = !paused;
+}
+window.addEventListener('keydown', function (e) {
+	if (e.keyCode === 80) {togglePause();}
+});
+
+
+function log(str) {
+	console.log(str);
+}
+	
+</script>

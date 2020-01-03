@@ -1,0 +1,377 @@
+<h1>Prove that the following expression equals 1:</h1>
+<input type="checkbox" id="hoverer">
+<div id="out"></div>
+<br><button id="reverse">Solve</button>
+<div id="sidebar">
+	<div id="refresh" onclick="start()"></div>
+	<div class="label">Difficulty:</div>
+	<input type="text" id="difficulty" value="6">
+	<div class="label">Hover:</div>
+	<label for="hoverer">
+		<input id="fakebox1" type="checkbox" checked>
+		<input id="fakebox2" type="checkbox">
+	</label>
+</div>
+
+<style>
+	
+body {
+	font: 28px sans-serif;
+	white-space: nowrap;
+	text-align: center;
+}
+
+#sidebar {
+	position: fixed;
+	left: 0;
+	top: 30px;
+	background: lightgrey;
+	border-radius: 0 10px 10px 0;
+	width: 70px;
+	height: 160px;
+	font-size: 14px;
+}
+
+#refresh {
+	width: 50px;
+	height: 50px;
+	margin: 10px auto;
+	box-sizing: border-box;
+	border: 5px solid black;
+	border-top-color: transparent;
+	border-radius: 50%;
+	transform: rotate(135deg);
+	cursor: pointer;
+}
+
+#refresh::after {
+	content: '';
+	position: absolute;
+	display: block;
+	width: 0;
+	height: 0;
+	border: solid transparent;
+	border-width: 8px;
+	border-bottom-width: 0;
+	border-top-color: black;
+	right: 26px;
+	top: -2px;
+	transform: rotate(-135deg);
+}
+
+.label {
+	margin-top: 5px;
+	margin-bottom: 3px;
+}
+
+input[type=checkbox] {cursor: pointer;}
+label[for=hoverer] {
+	display: inline-block;
+	position: relative;
+	width: 13px;
+	height: 13px;
+	margin: 0 auto;
+	cursor: pointer;
+}
+input[id^=fakebox] {
+	position: absolute;
+	left: 0; top: 0;
+	margin: 0;
+	pointer-events: none;
+}
+#hoverer {display: none;}
+#hoverer:checked ~ div #fakebox2 {display: none;}
+
+#difficulty {
+	display: inline-block;
+	margin: 0 auto;
+	text-align: center;
+	width: 75%;
+}
+
+#out {
+	width: 1000px;
+	margin: 0 auto;
+}
+
+#reverse {
+	font-size: 28px;
+}
+
+span {
+	display: inline-block;
+	text-align: center;
+	vertical-align: middle;
+	box-sizing: border-box;
+}
+
+.divide {padding: 0 4%; white-space: normal;}
+.divide > :not(.divide) {white-space: nowrap;}
+.divide > span:first-child, .divide > span:last-child {width: 100%;}
+.divide > span:first-child {border-bottom: 2px solid black;}
+/*.divide > span:last-child {border-top: 1px solid black;}*/
+
+.plus::before {content: '+'; padding: 0 10px;}
+.minus::before {content: '-'; padding: 0 10px;}
+.times > span:not(:last-child)::after {content: '×'; padding: 0 10px;}
+.times > .divide:not(:last-child) {margin-right: 30px; position: relative;}
+.times > .divide:not(:last-child)::after {position: absolute; top: 50%; transform: translateY(-50%); left: calc(100%)}
+/*.times > .divide:not(:last-child) + span {margin-right: 20px;}*/
+
+.sqrt {
+	border-left: 2px dotted black;
+	border-top: 2px dotted black;
+	margin: 5px 0;
+	padding: 0 10px;
+	/*background: url(images/sqrt.png);
+	background-size: auto 100%;*/
+}
+
+.arith, .sqrt {width: 100%;}
+
+#hoverer:checked ~ div .times:hover, #hoverer:checked ~ div .divide:hover, #hoverer:checked ~ div .sqrt:hover {
+	outline: 2px solid red;
+}
+
+
+</style>
+
+<script>
+
+// wraps: d (divide), t (times), a (addition/subtraction), p (plus), m (minus), sqrt (square root)
+
+var output = document.getElementById('out');
+var trgList = ["sin","cos","tan","csc","sec","cot"];
+var sinList,cosList,tanList,cscList,secList,cotList;
+
+setLists();
+function sqrt(ch) {return ['sqrt',ch]};
+function plus(ch) {return ['plus',ch]};
+function minus(ch) {return ['minus',ch]};
+function divide(ch1,ch2) {return ['divide',ch1,ch2]};
+function times() {return ['times',...arguments];};
+function arith() {return ['arith',...arguments];};
+function sqrta() {return sqrt(arith(...arguments));};
+function square(ch) {return times(ch,ch)};
+function inverse(ch) {return divide('1',ch)};
+function setLists() {
+
+	sinList = [
+		'sin',
+		sqrta(
+			'1',
+			minus(square('cos'))
+		),
+		divide(
+			'tan',
+			sqrta(
+				'1',
+				plus(square('tan'))
+			)
+		),
+		inverse('csc'),
+		divide(
+			sqrta(
+				square('sec'),
+				minus('1')
+			),
+			'sec'
+		),
+		inverse(
+			sqrta(
+				'1',
+				plus(square('cot'))
+			)
+		)
+	];
+	cosList = [
+		sqrta('1',minus(square('sin'))),
+		'cos',
+		inverse(
+			sqrta(
+				'1',
+				plus(square('tan'))
+			)
+		),
+		divide(
+			sqrta(
+				square('csc'),
+				minus('1')
+			),
+			'csc'
+		),
+		inverse('sec'),
+		divide(
+			'cot',
+			sqrta(
+				'1',
+				plus(square('cot'))
+			)
+		)
+	];
+	tanList = [
+		divide('sin',sqrta('1',minus(square('sin')))),
+		divide(sqrta('1',minus(square('sin'))),'cos'),
+		'tan',
+		inverse(sqrta(square('csc'),minus('1'))),
+		sqrta(square('sec'),minus('1')),
+		inverse('cot')
+	];
+	cscList = [
+		inverse('sin'),
+		inverse(sqrta(
+			'1',
+			minus(square('cos'))
+		)),
+		divide(
+			sqrta(
+				'1',
+				plus(square('tan'))
+			),
+			'tan'
+		),
+		'csc',
+		divide(
+			'sec',
+			sqrta(square('sec'),minus('1'))
+		),
+		sqrta('1',plus(square('cot')))
+	];
+	secList = [
+		inverse(sqrta('1',minus(square('sin')))),
+		inverse('cos'),
+		sqrta(
+			'1',
+			plus(square('tan'))
+		),
+		divide(
+			'csc',
+			sqrta(
+				square('csc'),
+				minus('1')
+			)
+		),
+		'sec',
+		divide(
+			sqrta(
+				'1',
+				plus(square('cot'))
+			),
+			'cot'
+		)
+	];
+	cotList = [
+		divide(sqrta('1',minus(square('sin'))),'sin'),
+		divide('cos',sqrta('1',minus(square('sin')))),
+		inverse('tan'),
+		sqrta(square('csc'),minus('1')),
+		inverse(sqrta(square('sec'),minus('1'))),
+		'cot'
+	];
+}
+
+function messAll(type) {
+	switch (type) {
+		case "sin": return getRandArray(sinList); break;
+		case "cos": return getRandArray(cosList); break;
+		case "tan": return getRandArray(tanList); break;
+		case "csc": return getRandArray(cscList); break;
+		case "sec": return getRandArray(secList); break;
+		case "cot": return getRandArray(cotList); break;
+		case "1": var rand = getRandArray(trgList); return divide(rand,rand); break;
+		case "0": return arith('1',minus('1')); break;
+	}
+}
+
+function messUp(arr) {
+	function getRandDeepArrayLastResort(arr) {
+		var rand = getRand(arr.length,1);
+		if (!Array.isArray(arr[rand])) {
+			arr[rand] = messAll(arr[rand]);
+		} else getRandDeepArrayLastResort(arr[rand]);
+	}
+
+	getRandDeepArrayLastResort(arr);
+
+	//var rando = getRandDeepArray(arr);
+	//rando[0][rando[1]] = messAll(rando[0][rando[1]]);
+}
+
+
+var steps = [];
+function start() {
+	
+	document.getElementById('reverse').style.display = 'inline';
+	output.innerHTML = "";
+	var mess = ['arith','1'];
+	var difficulty = parseInt(document.getElementById('difficulty').value);
+
+	steps = [formatMessHTML(mess)];
+
+	function doIt() {
+		messUp(mess);
+		console.log(mess);
+		steps.push(formatMessHTML(mess));
+		output.innerHTML = formatMessHTML(mess);
+	}
+
+	for (var i = 0; i < difficulty; i++) {
+		//setTimeout(doIt(),1000);
+		doIt();
+	}
+}
+start();
+
+document.getElementById('reverse').onclick = function() {
+	for (var i = steps.length - 2; i >= 0; i--) {
+		var txt = formatMessHTML(steps[i]).replace(/θθ/g,"θ");
+		output.innerHTML += "<br><br><br>=<br><br><br>" + txt;
+	}
+	this.style.display = 'none';
+}
+
+document.getElementById('difficulty').onkeypress = function(e){
+    if (!e) e = window.event;
+    var keyCode = e.keyCode || e.which;
+    if (keyCode == '13'){
+    	start();
+	    return false;
+    }
+  }
+
+function formatMessHTML(arr) {
+	var str = JSON.stringify(arr);
+	str = str.replace(/,/g,"");
+	str = str.replace(/\["(arith|sqrt|plus|minus|divide|times)"/g,"<span class='$1'>");
+	str = str.replace(/\]/g,"</span>");
+	str = str.replace(/(sin|cos|tan|csc|sec|cot)/g,"$1θ");
+	str = str.replace(/"(.*?)"/g,"<span class='norm'>$1</span>");
+
+	return str;
+}
+
+function getRandDeepValue(arr) {
+	if (Array.isArray(arr)) {
+		var rand = getRand(arr.length,1);
+		getRandDeepValue(arr[rand]);
+	} else return arr;
+}
+
+function getRandDeepArray(arr) {
+	var rand = getRand(arr.length,1);
+	if (!Array.isArray(arr[rand])) {
+		return arr;
+	}
+	else
+		getRandDeepArray(arr[rand]);
+}
+
+function getRand(max, min = 0) {
+	return Math.floor(Math.random()*(max-min))+min;
+}
+
+function getRandArray(arr) {
+	return arr[getRand(arr.length)];	
+}
+
+</script>

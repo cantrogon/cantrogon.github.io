@@ -1,0 +1,621 @@
+<form id="main">
+	<input type="radio" id="done1-ck">
+	<input type="radio" id="done2-ck">
+	<input type="button" id="resize-w-ck">
+	<input type="button" id="resize-h-ck">
+	<input type="checkbox" id="flag-toggle-ck">
+	<div class="resize-box">
+		<label class="resize-label resize-w-label" for="resize-w-ck"></label>
+		<label class="resize-label resize-h-label" for="resize-h-ck"></label>
+		<label class="done-label done1-label" for="done1-ck"></label>
+	</div>
+	<!--repeat-->
+	<input type="radio" class="bomb-ck" id="bomb-ck1">
+	<!--/repeat-->
+	<div class="area-box">
+		<div class="area-wrap1">
+			<div class="area-wrap2">
+				<div class="backdrop"></div>
+				<!--repeat-->
+				<div class="tile-box">
+					<input type="radio" class="init-bomb-ck" id="init-bomb-ck1">
+					<input type="radio" class="cover-ck" id="cover-ck1">
+					<input type="checkbox" class="flag-ck" id="flag-ck1">
+					<input type="checkbox" class="flag-ck bflag-ck" id="bflag-ck1">
+
+					<label class="flag-label" for="flag-ck1"></label>
+					<label class="flag-label bflag-label" for="bflag-ck1"></label>
+
+					<div class="bomb-box bomb-box1"></div>
+					<div class="bomb-box bomb-box2"></div>
+					<label class="bomb-label" for="bomb-ck1"></label>
+
+					<label class="cover-label" for="cover-ck1"></label>
+					<div class="cover"></div>
+				</div>
+				<!--/repeat-->
+				<div class="overlay"></div>
+				<div class="win-screen"></div>
+				<div class="border-box"></div>
+			</div>
+		</div>
+	</div>
+	<div class="roll-box-box">
+		<div class="roll-box">
+			<div class="roll-wrap1">
+				<div class="roll-wrap2">
+					<!--repeat-->
+					<label class="init-bomb-label" for="init-bomb-ck1"></label>
+					<!--/repeat-->
+				</div>
+			</div>
+		</div>
+		<label class="done-label done2-label" for="done2-ck"></label>
+	</div>
+	<div class="head-box">
+		<label class="reset-label"><input type="reset"></label>
+		<div class="bomb-counter"></div>
+		<div class="result-box"><div class="result-inner"></div></div>
+		<label class="flag-toggle-label" for="flag-toggle-ck"></label>
+	</div>
+
+</form>
+
+<style type="text/css">
+
+.resize-label, .reset-label, .flag-toggle-label, .done-label, .bomb-counter, .result-box {
+	width: 50px;
+	height: 50px;
+	text-align: center;
+	line-height: 50px;
+	font-size: 40px;
+	background: lightgrey;
+	/*border: 2px solid grey;*/
+	/*box-sizing: border-box;*/
+	box-shadow: inset 0 -0 0 2px grey;
+}
+
+.result-inner::before {
+	box-shadow: inset 0 0 0 2px grey;
+}
+
+.resize-label:hover, .reset-label:hover, .flag-toggle-label:hover, .done-label:hover, .roll-box:hover {
+	background: whitesmoke;
+}
+
+.resize-label:active, .reset-label:active, .flag-toggle-label:active, .done-label:active, #flag-toggle-ck:checked ~ .head-box .flag-toggle-label {
+	color: orange;
+}
+
+.resize-w-label:active, .reset-label:active, .flag-toggle-label:active, .roll-box:active, .done-label:active {
+	transform: translateY(1px);
+	/*box-shadow: inset 0 1px 0 3px grey;*/
+}
+
+
+/* size buttons */
+
+.resize-label {
+	font-size: 20px;
+	cursor: pointer;
+	order: -12;
+}
+.resize-h-label {
+	transform: rotate(90deg);
+}
+.resize-h-label:active {
+	transform: translateY(1px) rotate(90deg);
+}
+
+.resize-label::before {content: '\25C0';}
+.resize-label::after {content: '\25B6';}
+
+.resize-label::before, .resize-label::after {
+	animation: arrow-swap 10s linear infinite paused;
+}
+.resize-label::before {
+	animation-direction: reverse;
+}
+.resize-h-label::before, .resize-h-label::after {
+	animation-duration: 6s;
+}
+.resize-label:active::before, .resize-label:active::after {
+	animation-play-state: running;
+}
+
+@keyframes arrow-swap {
+	from {content: '\25C0';}
+	to {content: '\25B6';}
+}
+
+/* other buttons */
+
+.reset-label::before {
+	content: '\21BB';
+}
+
+.flag-toggle-label::before {
+	content: '\2691';
+}
+
+/* OTHER */
+
+.flag-label, .bomb-label {
+	text-align: center;
+	line-height: 50px;
+	font-size: 40px;
+}
+
+.flag-label {
+	color: red;
+}
+
+.flag-label::before {
+	content: '\2691';
+}
+
+.cover {
+	background: grey;
+	box-sizing: border-box;
+	border: 1px solid black;
+	box-shadow: 0 0 0 1px black;
+}
+
+.tile-box:hover .cover {
+	border-color: grey;
+	box-shadow: 0 0 0 1px grey;
+	z-index: 12;
+}
+
+.bomb-label::before {
+	content: '\00A4';
+	/*content: '\29BB';*/
+	/*color: lightgrey;*/
+	color: grey;
+	font-size: 50px;
+}
+
+.bflag-ck:checked ~ .bomb-label::before {
+	content: '';
+}
+
+.cover-label {
+	box-sizing: border-box;
+	border: 1px solid lightgrey;
+}
+
+.area-wrap2 {
+	box-shadow: 0 0 0 2px black;
+}
+
+#done2-ck:checked ~ .roll-box-box .roll-wrap2 {
+	animation-play-state: paused;
+}
+
+.roll-box {
+	width: 100px;
+	height: 100px;
+	cursor: pointer;
+	border: 2px solid grey;
+	background: lightgrey;
+	text-align: center;
+	line-height: 100px;
+	font-size: 55px;
+	font-family: sans-serif;
+}
+
+.roll-box::before {
+	content: counter(bombs);
+}
+
+.roll-box-box {
+	order: -10;
+	display: flex;
+}
+
+.resize-box {
+	display: flex;
+}
+
+.area-box {
+	display: flex;
+	justify-content: center;
+	border: 1px solid lightgrey;
+	background-color: white; 
+	background-image: 
+		repeating-linear-gradient(to right, lightgrey 0 1px, transparent 1px 49px, lightgrey 49px 50px),
+		repeating-linear-gradient(to bottom, lightgrey 0 1px, white 1px 49px, lightgrey 49px 50px);
+	margin-top: 15px;
+	transition: all .7s;
+}
+
+#main {
+	font-family: sans-serif;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.bomb-counter, .result-box {
+	/*order: -2;*/
+	width: 150px;
+	text-align: right;
+	padding: 0 15px;
+	font-size: 34px;
+}
+
+.result-box {
+	text-align: center;
+}
+
+.head-box {
+	order: -2;
+	display: flex;
+}
+
+.border-box {
+	box-sizing: border-box;
+	border: 2px solid black;
+}
+
+.done1-label {
+	order: -12;
+}
+
+.done-label::before {
+	content: '\25B6';
+}
+
+#done1-ck:checked ~ .resize-box, 
+#done1-ck:not(:checked) ~ .roll-box-box,
+#done2-ck:checked ~ .roll-box-box {
+	visibility: hidden;
+	transform: scale(0);
+	overflow: hidden;
+	height: 0;
+}
+
+#done1-ck:checked ~ .area-box {
+	border: none;
+	background-image: none;
+}
+
+#done2-ck:not(:checked) ~ .area-box label {
+	pointer-events: none;
+}
+
+#done2-ck:not(:checked) ~ .head-box {
+	display: none;
+}
+
+#flag-toggle-ck:checked ~ .area-box .flag-ck:not(:checked) ~ .flag-ck:not(:checked) ~ .flag-label:hover {
+	opacity: 1;
+	color: lightgrey;
+}
+
+.cover-label:hover ~ .cover, .bomb-label:hover ~ .cover {
+	background: lightgrey;
+}
+
+
+</style>
+
+
+<style type="text/css">
+
+.area-box {
+	width: 1000px;
+	height: calc(1000px*12/20);
+	position: relative;
+	pointer-events: none;
+	/*overflow: hidden;*/
+}
+
+label {
+	pointer-events: auto;
+	display: block;
+	cursor: pointer;
+}
+
+input {
+	position: absolute;
+	visibility: hidden;
+	transform: scale(0);
+}
+
+.backdrop, .overlay, .flag-label, .cover, .tile-box > label, .win-screen, .border-box {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+/* area */
+
+.backdrop {
+	background: repeating-linear-gradient(to bottom, white 0 4px, transparent 4px 46px, white 46px 50px),
+				repeating-linear-gradient(to right, transparent 0 43px, rgb(8,8,8) 43px 46px, transparent 46px 50px),
+				repeating-linear-gradient(to right, transparent 0 4px, rgb(7,7,7) 4px 7px, transparent 7px 50px),
+				repeating-linear-gradient(to right, white 0 11px, transparent 11px 39px, white 39px 50px),
+				repeating-linear-gradient(to bottom, transparent 0 41px, rgb(6,6,6) 41px 46px, transparent 46px 50px),
+				repeating-linear-gradient(to bottom, transparent 0 4px, rgb(5,5,5) 4px 9px, transparent 9px 50px),
+				repeating-linear-gradient(to bottom, white 0 13px, transparent 13px 37px, white 37px 50px),
+				repeating-linear-gradient(to right, transparent 0 34px, rgb(4,4,4) 34px 39px, transparent 39px 50px),
+				repeating-linear-gradient(to right, transparent 0 11px, rgb(3,3,3) 11px 16px, transparent 16px 50px),
+				repeating-linear-gradient(to right, white 0 20px, transparent 20px 30px, white 30px 50px),
+				repeating-linear-gradient(to bottom, transparent 0 27px, rgb(2,2,2) 27px 37px, transparent 37px 50px),
+				repeating-linear-gradient(to bottom, transparent 0 13px, rgb(1,1,1) 13px 23px, transparent 23px 50px);
+}
+
+.tile-box, .backdrop-tile {
+	width: 50px;
+	height: 50px;
+	position: relative;
+	float: left;
+}
+
+.overlay {
+	mix-blend-mode: color-dodge;
+	background: rgb(255,255,255);
+}
+
+.bomb-box {
+	position: absolute;
+	left: -100%;
+	top: -100%;
+	width: 300%;
+	height: 300%;
+	background: rgb(1,1,1);
+}
+.bomb-box1 {mix-blend-mode: lighten;}
+.bomb-box2 {mix-blend-mode: difference;}
+
+
+
+/*checking boxes*/
+
+.init-bomb-ck:not(:checked) ~ .bomb-box,
+.init-bomb-ck:not(:checked) ~ .bomb-label,
+.init-bomb-ck:not(:checked) ~ .bflag-label,
+.cover-ck:checked ~ .cover {
+	display: none;
+}
+
+#flag-toggle-ck:not(:checked) ~ .area-box .flag-label,
+.flag-ck:checked ~ .bomb-label,
+.flag-ck:checked ~ .cover-label,
+.cover-ck:checked ~ .cover-label,
+.cover-ck:checked ~ .flag-label,
+.bomb-ck:checked ~ .area-box label {
+	pointer-events: none;
+}
+
+.bomb-label, .flag-label {
+	opacity: 0;
+}
+
+.bomb-ck:checked ~ .area-box .bomb-label, 
+.flag-ck:checked ~ .flag-label {
+	opacity: 1;
+}
+
+.bomb-ck:checked ~ .area-box .bomb-label {
+	/*z-index: 17;*/
+}
+
+.bomb-ck:checked ~ .area-box .init-bomb-ck:checked ~ .cover {
+	background: lightgrey;
+}
+
+
+/*z-indexing*/
+
+.overlay 		{z-index: 10;}
+.cover-label 	{z-index: 11;}
+.cover 			{z-index: 13;}
+.bomb-label 	{z-index: 15;}
+.flag-label 	{z-index: 16;}
+.border-box		{z-index: 20;}
+
+
+/*counters*/
+
+body {counter-reset: bombs rbombs bflags;}
+
+.init-bomb-ck:checked 			{counter-increment: bombs rbombs bflags 100000000;}
+.flag-ck:not(.bflag-ck):checked {counter-increment: rbombs -1 bflags 1000000000;}
+.bflag-ck:checked				{counter-increment: rbombs -1 bflags -100000000;}
+
+.bomb-counter::after {content: counter(rbombs);}
+
+
+/*result*/
+
+.result-box {
+	position: relative;
+	overflow: hidden;
+}
+
+.result-box::before {content: "WIN!";}
+
+.result-inner {
+	display: inline-block;
+	position: absolute;
+	left: 0;
+	overflow: hidden;
+	height: 100%;
+}
+
+.result-inner::before {
+	content: counter(bflags); 
+	font-family: "Courier New";
+	font-size: 50px; 
+	background: lightgrey; 
+	color: transparent;
+	margin-left: -50px;
+	display: block;
+	height: 100%;
+}
+
+.result-inner::after {
+	content: "..."; 
+	position: absolute;
+	top: 0;
+	left: calc((150px + 2*15px)/2);
+	transform: translate(-50%);
+}
+
+.bomb-ck:checked ~ .head-box .result-inner::after {
+	content: "LOSE";
+}
+
+
+/*win screen-from-clicks*/
+
+.win-screen {
+	z-index: 30;
+	opacity: 0;
+}
+
+.win-screen::before {
+	content: counter(bflags);
+	display: inline-block;
+	font-size: 1000px;
+	font-family: "Courier New";
+	margin-left: -1000px;
+}
+
+.win-screen::after {
+	content: '';
+	display: inline-block;
+	position: absolute;
+	width: 4000px;
+	height: 100%;
+	pointer-events: auto;
+}
+
+
+
+/*picking init bombs*/
+
+.roll-box {
+	position: relative;
+	overflow: hidden;
+}
+
+.roll-wrap1 {
+	width: 100%;
+	padding-top: 200px;
+}
+
+.roll-wrap2 {
+	position: relative;
+	width: 100%;
+}
+
+.roll-wrap2::after {
+	content: '';
+	display: block;
+	width: 100px;
+	height: 100px;
+	position: absolute;
+	bottom: 0;
+}
+
+.roll-box:active .roll-wrap2 {
+	animation-play-state: paused;
+}
+
+.init-bomb-label {
+	width: 100px;
+	height: 100px;
+	position: relative;
+	top: -100px;
+}
+
+@keyframes shift {
+	to {transform: translateY(calc(-100% - 100px));}
+}
+
+
+/*choosing area size*/
+
+.roll-wrap1 {
+	animation: padw 10s -5s steps(19) infinite paused;
+}
+
+.roll-wrap2 {
+	animation: shift 1s linear infinite, padh 6s -3s steps(11) infinite paused;
+}
+
+#resize-w-ck:active ~ .roll-box-box .roll-wrap1,
+#resize-h-ck:active ~ .roll-box-box .roll-wrap2 {
+	animation-play-state: running;
+}
+
+@keyframes padw {
+	0%, 100% {height: 100%;}
+	50% {height: 2000%;}
+}
+
+@keyframes padh {
+	0%, 100% {height: 100%;}
+	50% {height: 1200%;}
+}
+
+/* changing area size */
+
+.area-wrap1, .area-wrap2 {
+	position: absolute;
+}
+
+.area-wrap1 {
+	height: 100%;
+	animation: areaw 10s -5s steps(19) infinite paused;
+}
+
+.area-wrap2 {
+	overflow: hidden;
+	width: 100%;
+	animation: areah 6s -3s steps(11) infinite paused;
+}
+
+#resize-w-ck:active ~ .area-box .area-wrap1,
+#resize-h-ck:active ~ .area-box .area-wrap2 {
+	animation-play-state: running;
+}
+
+@keyframes areaw {
+	0%, 100% {width: calc(100%/20);}
+	50% {width: 100%;}
+}
+
+@keyframes areah {
+	0%, 100% {height: calc(100%/12);}
+	50% {height: 100%;}
+}
+
+
+</style>
+
+<script type="text/javascript">
+
+var repeatNum = 240;
+
+var cList = ["bomb-ck","tile-box","init-bomb-label"];
+for (var i = 0; i < cList.length; i++) {
+	for (var j = repeatNum; j > 1; j--) {
+		var str = getElmCls(cList[i]).outerHTML.replace(/ck1/g,"ck"+j);
+		getElmCls(cList[i]).outerHTML += str;
+	}
+}
+
+var total = document.body.innerHTML.replace(/<!--(.*?)-->/g,"");
+document.body.innerHTML = total;
+
+function getElmCls(cls) {
+	return document.getElementsByClassName(cls)[0];
+}
+
+</script>

@@ -1,0 +1,404 @@
+<canvas tabindex='1' id="canvas" width="1600" height="1600"><p>Your browser does not support HTML5 canvas.</p></canvas>
+<div id="box"><br></div>
+
+<style type="text/css">
+
+canvas {
+	display: block;
+	margin: 0 auto;
+	outline: 2px solid black;
+}
+
+#box {
+	text-align: center;
+}
+
+</style>
+
+<script type="text/javascript">
+	
+window.addEventListener('load',start(),false);
+
+function start() {
+	canvas = document.getElementById("canvas");
+	ctx = canvas.getContext("2d");
+	cw = canvas.width;
+	ch = canvas.height;
+
+	mazeSize = [60,60];
+	var fps = 100;
+
+	tileW = cw/mazeSize[0];
+	tileH = ch/mazeSize[1];
+
+	mazeArea = [];
+	for (var i = 0; i < mazeSize[0]; i++) {
+		mazeArea[i] = [];
+		for (var j = 0; j < mazeSize[1]; j++) {
+			mazeArea[i][j] = {};
+			var tile = mazeArea[i][j];
+			tile.fillStatus = 0;
+			tile.paths = [0,0,0,0];
+			tile.coord = [i,j];
+		}
+	}
+	for (var i = mazeArea.length - 1; i >= 0; i--) {
+		for (var j = mazeArea[i].length - 1; j >= 0; j--) {
+			var tile = mazeArea[i][j];
+			tile.bordering = getBordering(tile.coord);
+			tile.bordFul = [];
+		}
+	}
+
+	var initTileNum = 1;
+
+	listCur = [];
+	var initTiles = [];
+	for (var j = initTileNum - 1; j >= 0; j--) {
+		var initTile = mazeArea[randomInt(0,mazeSize[0]-1)][randomInt(0,mazeSize[1]-1)];
+		initTile.fillStatus = 2;
+		initTiles.push(initTile);
+	}
+	for (var j = initTiles.length - 1; j >= 0; j--) {
+		for (var i = initTiles[j].bordering.length - 1; i >= 0; i--) {
+			var bord = initTiles[j].bordering[i];
+			if (bord.fillStatus === 0) {
+				bord.fillStatus = 1;
+				listCur.push(bord);
+				bord.bordFul.push(initTiles[j]);
+			}
+		}
+	}
+	fulNum = initTileNum;
+	log(initTiles);
+
+
+	end = false; paused = false;
+	/*
+	setInterval(function() {
+	if (!end && !paused) {
+		update();
+		console.log("Up")
+	}
+	}, 1000/fps);*/
+
+	var start = new Date().getTime();
+
+	while (!end) {
+		update();
+		console.log("Up")
+	}
+
+	var ender = new Date().getTime();
+	log(ender-start);
+
+}
+
+function update() {
+
+	var tnum = randomInt(0,listCur.length-1);
+	var tile = listCur[tnum];
+
+	tile.fillStatus = 2;
+	listCur.splice(tnum,1);
+	fulNum++;
+
+
+	var bords = tile.bordering;
+	for (var i = 0; i < bords.length; i++) {
+		if (bords[i].fillStatus === 0) {
+			listCur.push(bords[i]);
+			bords[i].fillStatus = 1;
+			bords[i].bordFul.push(tile);
+		}
+	}
+
+	var bord = getRandItem(tile.bordFul);
+	buildPath(tile,bord);
+
+
+/*
+	var bords = tile.bordering;
+	bords = shuffleArray(bords);
+
+	var cont = true;
+	for (var i = bords.length - 1; i >= 0; i--) {
+		if (bords[i].fillStatus === 0) {
+			listCur.push(bords[i]);
+			bords[i].fillStatus = 1;
+		}
+		if (cont && bords[i].fillStatus === 2) {
+			buildPath(tile,bords[i]);
+			cont = false;
+		}
+	}
+*/
+
+
+
+	if (fulNum === mazeSize[0]*mazeSize[1]) end = true;
+
+
+	if (!end) draww();
+	else {
+		drawEnd();
+		var img = canvas.toDataURL("image/png");
+		var box = document.getElementById("box");
+		box.innerHTML += "<a href='" + img + "'>Image link (right click + open new tab)</a>";
+	}
+}
+
+function draww() {}
+
+function buildPath(tile,bord) {
+	var k, cA = tile.coord, cB = bord.coord;
+	if (cA[0] === cB[0] && cA[1] > cB[1]) k = 0;
+	else if (cA[1] === cB[1] && cA[0] < cB[0]) k = 1;
+	else if (cA[0] === cB[0] && cA[1] < cB[1]) k = 2;
+	else if (cA[1] === cB[1] && cA[0] > cB[0]) k = 3;
+	var l = k + 2 > 3 ? k - 2 : k + 2;
+	tile.paths[k] = 1;
+	bord.paths[l] = 1;
+}
+
+function draw() {
+	var w = tileW, h = tileH;
+	for (var i = mazeArea.length - 1; i >= 0; i--) {
+		for (var j = mazeArea[i].length - 1; j >= 0; j--) {
+			var x = i*w, y = j*h;
+			var tile = mazeArea[i][j];
+			if (tile.fillStatus === 0) drawRect(x,y,w,h,"lightGrey");
+			if (tile.fillStatus === 1) drawRect(x,y,w,h,"aquamarine");
+			if (tile.fillStatus === 2) drawRect(x,y,w,h,"turquoise");
+
+			for (var k = tile.paths.length - 1; k >= 0; k--) {
+				var r = 4, tx = x, ty = y;
+				switch(k) {
+					case 0: tx += w/2-r/2; break;
+					case 1: tx += w-r; ty += h/2-r/2; break;
+					case 2: tx += w/2-r/2; ty += h-r; break;
+					case 3: ty += h/2-r/2; break;
+				}
+				if (tile.paths[k]) drawRect(tx,ty,r,r,"grey");
+			}
+
+		}
+	}
+	for (var i = mazeSize[0]; i >= 0; i--) {drawRect(i*w-1,0,2,ch,"grey");}
+	for (var i = mazeSize[1]; i >= 0; i--) {drawRect(0,i*h-1,cw,2,"grey");}
+
+}
+
+function drawEnd() {
+	var bgc = "white", wallcol = "black", r = 2, s = r/2;
+	var w = tileW, h = tileH;
+
+	drawRect(0,0,cw,ch,bgc);
+
+	for (var i = mazeSize[0] - 1; i >= 0; i--) {
+		for (var j = mazeSize[1] - 1; j >= 0; j--) {
+			var tile = mazeArea[i][j];
+			var x = i*w, y = j*h;
+			for (var k = tile.paths.length - 1; k >= 0; k--) {
+				var tx = x, ty = y, tw = s, th = s;
+				switch(k) {
+					case 0: tw = w; break;
+					case 1: tx += w-s; th = h; break;
+					case 2: ty += h-s; tw = w; break;
+					case 3: th = h; break;
+				}
+				if (!tile.paths[k]) drawRect(tx,ty,tw,th,wallcol);
+
+				function drawCorner(xx,yy) {drawRect(x+xx,y+yy,s,s,wallcol)}
+				if (!tile.paths[0] && !tile.paths[3]) drawCorner(-s,-s);
+				if (!tile.paths[1] && !tile.paths[0]) drawCorner(w,-s);
+				if (!tile.paths[2] && !tile.paths[1]) drawCorner(w,h);
+				if (!tile.paths[3] && !tile.paths[2]) drawCorner(-s,h);
+			}
+
+		}
+	}
+
+}
+
+function getBordering(coord) {
+	var x = coord[0], y = coord[1];
+	var conditionList = [mazeArea[x][y-1],mazeArea[x+1],mazeArea[x][y+1],mazeArea[x-1]];
+	var list = [];
+	for (var i = 0; i < conditionList.length; i++) {
+		if (conditionList[i] === undefined) list[i] = {fillStatus: 3};
+		else if (i === 1 || i === 3) list[i] = conditionList[i][y];
+		else list[i] = conditionList[i];
+	}
+	return list;
+}
+
+
+
+function getRandChance(chance) {
+	return Math.random() < chance;
+}
+
+function getRandItem(arr) {
+	return arr[randomInt(0,arr.length-1)];
+}
+
+function shiftArray(arr,num) {
+	num = Math.abs(num-arr.length);
+	var tempArr = arr.slice(num);
+	arr.splice(num);
+	return [...tempArr, ...arr];
+}
+
+function shiftArrayRand(arr) {
+	return shiftArray(arr,randomInt(0,arr.length-1));
+}
+
+function shuffleArray(array) {
+	var curr = array.length, temp, rand;
+	while (0 !== curr) {
+		rand = Math.floor(Math.random() * curr);
+		curr -= 1;
+	
+		temp = array[curr];
+		array[curr] = array[rand];
+		array[rand] = temp;
+	}
+	return array;
+}
+
+function moveItem(arr1,num1,arr2,num2=arr2.length) {
+	arr2.splice(num2,0,arr1[num1]);
+	arr1.splice(num1,1);
+}
+
+
+
+function drawRect(x,y,w,h,color) {
+	ctx.fillStyle = color;
+	ctx.fillRect(x,y,w,h);
+}
+
+function drawBorder(x,y,w,h,thick,color) {
+	ctx.fillStyle = color;
+	ctx.fillRect(x,y,w,thick);
+	ctx.fillRect(x,y,thick,h);
+	ctx.fillRect(x,y+h-thick,w,thick);
+	ctx.fillRect(x+w-thick,y,thick,h);
+}
+
+function drawCirc(x,y,r,color,type = "fill") {
+	ctx.beginPath();
+	ctx.fillStyle = color;
+	ctx.strokeStyle = color;
+	ctx.arc(x,y,r,0,2*Math.PI);
+	if (type == "fill") ctx.fill();
+	else if (type == "stroke") ctx.stroke();
+}
+
+function drawCircSect(x,y,r,o,color) {
+	ctx.fillStyle = color;
+	ctx.beginPath();
+	if (o != 360 && o != 0) {ctx.arc(x,y,r,0,Math.PI*(2-o/180),true);}
+	else if (o == 360) {ctx.arc(x,y,r,0,Math.PI*2,true);}
+	else {ctx.arc(x,y,r,0,Math.PI*0,true);}
+	ctx.lineTo(x,y);
+	ctx.fill();
+}
+
+function drawImg(img,x,y,w,h) {
+	ctx.drawImage(img,x,y,w,h);
+}
+
+function drawPat(img,x,y,w,h) {
+	ctx.fillStyle = ctx.createPattern(img,"repeat");
+	ctx.rect(x,y,w,h);
+	ctx.fill();
+}
+
+function drawEqTriangle(x,y,s,color){
+	var h = s*Math.sqrt(3)/2;
+	ctx.fillStyle = color;
+	ctx.beginPath();
+	ctx.lineTo(x,y);
+	ctx.lineTo(x+s,y);
+	ctx.lineTo(x+s/2,y-h);
+	ctx.fill();
+}
+
+function drawText(text,x,y,size,font,color,align,baseline) {
+	ctx.fillStyle = color;
+	ctx.font = size + " " + font;
+	ctx.textAlign = align;
+	ctx.textBaseline = baseline; 
+	ctx.fillText(text,x,y);
+}
+
+function clear() {
+	ctx.clearRect(0, 0, cw, ch);
+}
+
+
+
+function randomInt(min, max) { // inclusive
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function isEven(n) {
+	return n % 2 == 0;
+}
+
+function variChanged(vari,temp) {
+	if (vari != temp) {
+		temp = vari;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function toDegrees(angle) {
+	return angle * 180/Math.PI;
+}
+
+function toRadians(angle) {
+	return angle * Math.PI/180;
+}
+
+function getMousePos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+}
+
+function isNumber(num) {
+	return !isNaN(Number(num));
+}
+
+function copyObject(obj) {
+	return Object.assign({}, obj);
+}
+
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function togglePause() {
+	paused = !paused;
+}
+window.addEventListener('keydown', function (e) {
+	if (e.keyCode === 80) togglePause();
+});
+
+function log(str) {
+	console.log(str);
+}
+
+
+</script>

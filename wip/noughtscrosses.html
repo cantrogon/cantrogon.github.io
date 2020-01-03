@@ -1,0 +1,610 @@
+<style type="text/css">
+
+#main {
+	background: #553411;
+	border-radius: 20px;
+	margin: 0 auto;
+	max-width: 340px;
+	text-align: center;
+	font-family: "Varela Round", sans-serif;
+	overflow: hidden;
+	z-index: 1;
+	opacity: .99;
+	position: relative;
+}
+
+#game {
+	position: relative;
+	padding-bottom: 100%;
+}
+
+input {
+	display: none;
+}
+
+label, .cro, .nou {
+	position: absolute;
+	width: calc((100% - 40px) / 3);
+	padding-bottom: calc((100% - 40px) / 3);
+	border-radius: 20px;
+	display: block;
+}
+
+label {
+	cursor: pointer;
+}
+
+label[for^="cro"] {
+	background: #e6c397;
+}
+
+label[for^="nou"] {
+	display: none;
+}
+
+input[id^="cro"]:checked ~ label[for^="nou"] {
+	display: block;
+}
+
+input[id^="cro"]:checked + label + div, input[id^="nou"]:checked + label + div {
+	animation-play-state: running;
+}
+
+.cro, .nou {
+	z-index: 2;
+	animation: appear 0.001s forwards paused;
+}
+
+/* CROSS */
+
+.cro::before, .cro::after {
+	content: '';
+	width: 10px;
+	height: 75%;
+	border-radius: 10px;
+	background: #553411;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	animation-duration: 0.6s;
+	animation-fill-mode: forwards;
+	animation-play-state: inherit;
+}
+
+.cro::before {
+	animation-name: croanimleft;
+}
+
+.cro::after {
+	animation-name: croanimright;
+}
+
+@keyframes croanimleft {
+	0%	{height: 0; transform: translate(-50%, -50%);}
+	30%	{height: 75%; transform: translate(-50%, -50%)}
+	100% {transform: translate(-50%, -50%) rotate(45deg);}
+}
+
+@keyframes croanimright {
+	0%	{height: 0; transform: translate(-50%, -50%);}
+	30%	{height: 75%; transform: translate(-50%, -50%)}
+	100% {transform: translate(-50%, -50%) rotate(-45deg);}
+}
+
+/* NOUGHT */
+
+.nou::before {
+	content: '';
+	width: 50%;
+	height: 50%;
+	border: 10px solid #553411;
+	border-radius: 50px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	animation: nouanim 0.6s forwards;
+	animation-play-state: inherit;
+}
+
+@keyframes nouanim {
+	0%		{height: 0; width: 0;}
+	30%		{height: 0; width: 50%;}
+	100%	{height: 50%; width: 50%;}
+}
+
+/* ANIMATIONS */
+
+@keyframes appear {
+	from {visibility: hidden;}
+	to {visibility: visible;}
+}
+
+@keyframes transpear {
+	from {visibility: hidden; transform: scale(0);}
+	to {visibility: visible; transform: scale(1);}
+}
+
+@keyframes fadein {
+	from {opacity: 0;}
+	to {opacity: 1;}
+}
+
+@keyframes reset {
+	from {visibility: hidden;}
+	to {visibility: hidden;}
+}
+
+/* GRID POSITIONING */
+
+.l {left: 10px;}
+.c {left: calc((100% - 40px) / 3 + 20px);}
+.r {left: calc((100% - 40px) / 3 * 2 + 30px);}
+.u {top: 10px;}
+.m {top: calc((100% - 40px) / 3 + 20px);}
+.d {top: calc((100% - 40px) / 3 * 2 + 30px);}
+
+/* RESET */
+
+#reset:checked ~ #game div, #reset:checked ~ #game div::before, #reset:checked ~ #game div::after {
+	animation-name: reset !important;
+}
+
+.reset {
+	position: relative;
+	display: block;
+	z-index: 4;
+	width: 100px;
+	height: 100px;
+	border: 10px solid #e6c397;
+	border-right-color: transparent;
+	border-radius: 100px; 
+	position: relative;
+	box-sizing: border-box;
+	margin: 15px auto 25px auto;
+	padding: 0;
+}
+
+.reset::before {
+	content: '';
+	position: absolute;
+	left: 100%;
+	top: 50%;
+	margin-left: -20px;
+	height: 0;
+	width: 0;
+	border: 20px solid transparent;
+	border-top: 20px solid #e6c397;
+	transform: rotate(-45deg);
+	transform-origin: -35px 0;
+}
+
+/* WIN|LOSE|DRAW */
+
+.end {
+	max-width: 340px;
+	padding-bottom: 100%;
+}
+
+.overlay {
+	width: 9999px;
+	height: 9999px;
+	background-color: black;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.end-overlay-wrap {
+	opacity: .6;
+	z-index: 3;
+	position: relative;
+}
+
+div[class^="e-"] {
+	transform: scale(0);
+	animation: transpear 0.0001s forwards paused, fadein 0.5s both paused;
+	position: absolute;
+	width: 100%;
+	z-index: 3;
+}
+
+#cro1:checked ~ div[class^="end-"] .e-cro-top-1,
+#cro1:checked ~ div[class^="end-"] .e-cro-lef-1,
+#cro1:checked ~ div[class^="end-"] .e-cro-bac-1,
+#cro2:checked ~ div[class^="end-"] .e-cro-top-2,
+#cro2:checked ~ div[class^="end-"] .e-cro-cen-1,
+#cro3:checked ~ div[class^="end-"] .e-cro-top-3,
+#cro3:checked ~ div[class^="end-"] .e-cro-rig-1,
+#cro3:checked ~ div[class^="end-"] .e-cro-for-1,
+#cro4:checked ~ div[class^="end-"] .e-cro-lef-2,
+#cro4:checked ~ div[class^="end-"] .e-cro-mid-1,
+#cro5:checked ~ div[class^="end-"] .e-cro-cen-2,
+#cro5:checked ~ div[class^="end-"] .e-cro-mid-2,
+#cro5:checked ~ div[class^="end-"] .e-cro-for-2,
+#cro5:checked ~ div[class^="end-"] .e-cro-bac-2,
+#cro6:checked ~ div[class^="end-"] .e-cro-rig-2,
+#cro6:checked ~ div[class^="end-"] .e-cro-mid-3,
+#cro7:checked ~ div[class^="end-"] .e-cro-lef-3,
+#cro7:checked ~ div[class^="end-"] .e-cro-bot-1,
+#cro7:checked ~ div[class^="end-"] .e-cro-for-3,
+#cro8:checked ~ div[class^="end-"] .e-cro-cen-3,
+#cro8:checked ~ div[class^="end-"] .e-cro-bot-2,
+#cro9:checked ~ div[class^="end-"] .e-cro-rig-3,
+#cro9:checked ~ div[class^="end-"] .e-cro-bot-3,
+#cro9:checked ~ div[class^="end-"] .e-cro-bac-3,
+
+#nou1:checked ~ div[class^="end-"] .e-nou-top-1,
+#nou1:checked ~ div[class^="end-"] .e-nou-lef-1,
+#nou1:checked ~ div[class^="end-"] .e-nou-bac-1,
+#nou2:checked ~ div[class^="end-"] .e-nou-top-2,
+#nou2:checked ~ div[class^="end-"] .e-nou-cen-1,
+#nou3:checked ~ div[class^="end-"] .e-nou-top-3,
+#nou3:checked ~ div[class^="end-"] .e-nou-rig-1,
+#nou3:checked ~ div[class^="end-"] .e-nou-for-1,
+#nou4:checked ~ div[class^="end-"] .e-nou-lef-2,
+#nou4:checked ~ div[class^="end-"] .e-nou-mid-1,
+#nou5:checked ~ div[class^="end-"] .e-nou-cen-2,
+#nou5:checked ~ div[class^="end-"] .e-nou-mid-2,
+#nou5:checked ~ div[class^="end-"] .e-nou-for-2,
+#nou5:checked ~ div[class^="end-"] .e-nou-bac-2,
+#nou6:checked ~ div[class^="end-"] .e-nou-rig-2,
+#nou6:checked ~ div[class^="end-"] .e-nou-mid-3,
+#nou7:checked ~ div[class^="end-"] .e-nou-lef-3,
+#nou7:checked ~ div[class^="end-"] .e-nou-bot-1,
+#nou7:checked ~ div[class^="end-"] .e-nou-for-3,
+#nou8:checked ~ div[class^="end-"] .e-nou-cen-3,
+#nou8:checked ~ div[class^="end-"] .e-nou-bot-2,
+#nou9:checked ~ div[class^="end-"] .e-nou-rig-3,
+#nou9:checked ~ div[class^="end-"] .e-nou-bot-3,
+#nou9:checked ~ div[class^="end-"] .e-nou-bac-3,
+
+#cro1:checked ~ div[class^="end-"] .e-all-1,
+#cro2:checked ~ div[class^="end-"] .e-all-2,
+#cro3:checked ~ div[class^="end-"] .e-all-3,
+#cro4:checked ~ div[class^="end-"] .e-all-4,
+#cro5:checked ~ div[class^="end-"] .e-all-5,
+#cro6:checked ~ div[class^="end-"] .e-all-6,
+#cro7:checked ~ div[class^="end-"] .e-all-7,
+#cro8:checked ~ div[class^="end-"] .e-all-8,
+#cro9:checked ~ div[class^="end-"] .e-all-9,
+
+#nou1:checked ~ div[class^="end-"] .e-all-1,
+#nou2:checked ~ div[class^="end-"] .e-all-2,
+#nou3:checked ~ div[class^="end-"] .e-all-3,
+#nou4:checked ~ div[class^="end-"] .e-all-4,
+#nou5:checked ~ div[class^="end-"] .e-all-5,
+#nou6:checked ~ div[class^="end-"] .e-all-6,
+#nou7:checked ~ div[class^="end-"] .e-all-7,
+#nou8:checked ~ div[class^="end-"] .e-all-8,
+#nou9:checked ~ div[class^="end-"] .e-all-9
+{animation-play-state: running;}
+
+.end-tiles .cro, .end-tiles .nou {animation: none;}
+.end-tiles .cro::before, .end-tiles .cro::after {background: #e6c397;}
+.end-tiles .nou::before {border-color: #e6c397;}
+
+
+/* COMPUTER OPPONENT */
+
+#comp:checked ~ #game label[for^="nou"], #comp:checked ~ #game > .end-overlay-wrap, #comp:checked ~ #game > .end-tiles {
+	display: none !important;
+}
+
+label[for="comp"] {
+	display: block;
+	width: 70px;
+	height: 70px;
+	border-radius: 10px;
+	background: red;
+	background-image: linear-gradient(#573613 45%, #6d6154 55%);
+	position: absolute;
+	bottom: 40px;
+	right: 20px;
+	padding: 0;
+	overflow: hidden;
+	transform: scale(0.9999999999);
+	transition: .3s ease-out;
+}
+
+label[for="comp"]::before {
+	content: '';
+	display: block;
+	width: calc(100% - 10px);
+	height: calc(50% - 5px);
+	border-radius: 10px;
+	background: transparent;
+	position: absolute;
+	left: 5px;
+	top: 5px;
+	border-radius: 10px;
+	transition: .3s ease-out;
+	box-shadow: 0 0 0 50px #E6C498;
+}
+
+#comp:checked ~ label[for="comp"]::before {
+	top: 50%;
+}
+
+#reset:not(:checked) ~ label[for="comp"] {
+	opacity: .5;
+	pointer-events: none;
+}
+
+.fake .nou {
+	animation: none;
+	pointer-events: auto;
+}
+
+.fake .nou::before {
+	animation: none;
+	border-color: #6d6154;
+}
+
+#comp:checked ~ #game label[for^="cro"] + .cro {
+	background: #e6c397;
+}
+
+.frap {
+	opacity: 0;
+	animation: fadein .6s both paused, leftpear .0001s both paused;
+	pointer-events: none;
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+}
+
+@keyframes leftpear {
+	from {left: 9999px;}
+	to {left: 0;}
+}
+
+#comp:checked ~ #game #cro9:checked ~ .fake [pos="mc"],
+#comp:checked ~ #game #cro1:checked ~ .fake [pos="mc"],
+#comp:checked ~ #game #cro5:checked ~ .fake [pos="ul"],
+
+#comp:checked ~ #game #cro4:checked ~ .fake [pos="mr"],
+#comp:checked ~ #game #cro4:checked ~ .fake [pos="mr"] .b,
+#comp:checked ~ #game #cro6:checked ~ .fake [pos="ml"],
+
+#comp:checked ~ #game #cro7:checked ~ .fake [pos="ur"],
+#comp:checked ~ #game #cro3:checked ~ .fake [pos="dl"],
+#comp:checked ~ #game #cro3:checked ~ .fake [pos="dl"] .b,
+#comp:checked ~ #game #cro3:checked ~ .fake [pos="dl"] .c,
+
+#comp:checked ~ #game #cro2:checked ~ .fake [pos="dc"],
+#comp:checked ~ #game #cro8:checked ~ .fake [pos="uc"],
+#comp:checked ~ #game #cro8:checked ~ .fake [pos="uc"] .b,
+#comp:checked ~ #game #cro8:checked ~ .fake [pos="uc"] .c,
+#comp:checked ~ #game #cro8:checked ~ .fake [pos="uc"] .d,
+
+
+#comp:checked ~ #game #cro9:checked ~ .fake [pos="mr"],
+#comp:checked ~ #game #cro1:checked ~ .fake [pos="mr"] .b,
+#comp:checked ~ #game #cro5:checked ~ .fake [pos="mr"] .b,
+
+#comp:checked ~ #game #cro9:checked ~ .fake [pos="dl"],
+#comp:checked ~ #game #cro1:checked ~ .fake [pos="dl"] .b,
+#comp:checked ~ #game #cro5:checked ~ .fake [pos="dl"] .b,
+#comp:checked ~ #game #cro4:checked ~ .fake [pos="dl"] .c,
+#comp:checked ~ #game #cro6:checked ~ .fake [pos="dl"] .c,
+
+#comp:checked ~ #game #cro9:checked ~ .fake [pos="uc"],
+#comp:checked ~ #game #cro1:checked ~ .fake [pos="uc"] .b,
+#comp:checked ~ #game #cro5:checked ~ .fake [pos="uc"] .b,
+#comp:checked ~ #game #cro4:checked ~ .fake [pos="uc"] .c,
+#comp:checked ~ #game #cro6:checked ~ .fake [pos="uc"] .c,
+#comp:checked ~ #game #cro3:checked ~ .fake [pos="uc"] .d,
+#comp:checked ~ #game #cro7:checked ~ .fake [pos="uc"] .d,
+
+
+
+#comp:checked ~ #game #cro5:checked ~ .fake-end .e-fake-nou-lef-1,
+#comp:checked ~ #game #cro6:checked ~ .fake-end .e-fake-nou-lef-2,
+#comp:checked ~ #game #cro3:checked ~ .fake-end .e-fake-nou-lef-3,
+#comp:checked ~ #game #cro9:checked ~ .fake-end .e-fake-nou-lef-3,
+#comp:checked ~ #game #cro7:checked ~ .fake-end .e-fake-nou-lef-0,
+
+#comp:checked ~ #game #cro5:checked ~ .fake-end .e-fake-nou-top-1,
+#comp:checked ~ #game #cro7:checked ~ .fake-end .e-fake-nou-top-2,
+#comp:checked ~ #game #cro4:checked ~ .fake-end .e-fake-nou-top-3,
+#comp:checked ~ #game #cro6:checked ~ .fake-end .e-fake-nou-top-3,
+#comp:checked ~ #game #cro9:checked ~ .fake-end .e-fake-nou-top-4,
+#comp:checked ~ #game #cro8:checked ~ .fake-end .e-fake-nou-top-3,
+#comp:checked ~ #game #cro8:checked ~ .fake-end .e-fake-nou-top-4,
+#comp:checked ~ #game #cro2:checked ~ .fake-end .e-fake-nou-top-0,
+
+
+#comp:checked ~ #game #cro1:checked ~ .fake-end .e-fake-cro-top-1,
+#comp:checked ~ #game #cro2:checked ~ .fake-end .e-fake-cro-top-2,
+#comp:checked ~ #game #cro3:checked ~ .fake-end .e-fake-cro-top-3,
+
+#comp:checked ~ #game #cro7:checked ~ .fake-end .e-fake-cro-bot-1,
+#comp:checked ~ #game #cro8:checked ~ .fake-end .e-fake-cro-bot-2,
+#comp:checked ~ #game #cro9:checked ~ .fake-end .e-fake-cro-bot-3,
+
+#comp:checked ~ #game #cro1:checked ~ .fake-end .e-fake-cro-lef-1,
+#comp:checked ~ #game #cro4:checked ~ .fake-end .e-fake-cro-lef-2,
+#comp:checked ~ #game #cro7:checked ~ .fake-end .e-fake-cro-lef-3,
+
+#comp:checked ~ #game #cro3:checked ~ .fake-end .e-fake-cro-rig-1,
+#comp:checked ~ #game #cro6:checked ~ .fake-end .e-fake-cro-rig-2,
+#comp:checked ~ #game #cro9:checked ~ .fake-end .e-fake-cro-rig-3,
+
+
+#comp:checked ~ #game #cro1:checked ~ .fake-end .e-fake-all-1,
+#comp:checked ~ #game #cro5:checked ~ .fake-end .e-fake-all-1,
+#comp:checked ~ #game #cro2:checked ~ .fake-end .e-fake-all-2,
+#comp:checked ~ #game #cro8:checked ~ .fake-end .e-fake-all-2,
+#comp:checked ~ #game #cro3:checked ~ .fake-end .e-fake-all-3,
+#comp:checked ~ #game #cro7:checked ~ .fake-end .e-fake-all-3,
+#comp:checked ~ #game #cro4:checked ~ .fake-end .e-fake-all-4,
+#comp:checked ~ #game #cro6:checked ~ .fake-end .e-fake-all-4,
+#comp:checked ~ #game #cro9:checked ~ .fake-end .e-fake-all-5
+
+{animation-play-state: running;}
+
+.e-fake-nou-lef-0, .e-fake-nou-top-0 {animation-direction: reverse !important;}
+
+.fake-end .nou, .fake-end .cro {animation: none;}
+.fake-end .nou::before {border-color: #dbc9b1; animation: none;}
+.fake-end .cro::before, .fake-end .cro::after {background: #e6c397; animation-duration: 0.001s;}
+
+
+#comp:checked ~ #game #cro7:checked ~ .fake-end .e-fake-nou-top-00,
+#comp:checked ~ #game #cro8:checked ~ .fake-end .e-fake-nou-top-00
+{border-left-style: solid;}
+
+#comp:checked ~ #game #cro9:checked ~ .fake-end .e-fake-nou-top-00
+{animation-play-state: running !important;}
+
+.e-fake-nou-top-00 {
+	transform: none !important;
+	border-left: transparent none 0;
+	animation: quickfix 0.001s forwards paused !important;
+}
+
+@keyframes quickfix {
+	to {border-left-width: 500px;}
+}
+
+
+</style>
+
+<link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet">
+
+<div id="main">
+	<input type="radio" id="reset" name="noucro" checked>
+	<input type="checkbox" id="comp">
+	<div id="game">
+		<input type="radio" id="cro1" name="noucro" /><label for="cro1" class="u l"></label><div class="cro u l"></div>
+		<input type="radio" id="cro2" name="noucro" /><label for="cro2" class="u c"></label><div class="cro u c"></div>
+		<input type="radio" id="cro3" name="noucro" /><label for="cro3" class="u r"></label><div class="cro u r"></div>
+		<input type="radio" id="cro4" name="noucro" /><label for="cro4" class="m l"></label><div class="cro m l"></div>
+		<input type="radio" id="cro5" name="noucro" /><label for="cro5" class="m c"></label><div class="cro m c"></div>
+		<input type="radio" id="cro6" name="noucro" /><label for="cro6" class="m r"></label><div class="cro m r"></div>
+		<input type="radio" id="cro7" name="noucro" /><label for="cro7" class="d l"></label><div class="cro d l"></div>
+		<input type="radio" id="cro8" name="noucro" /><label for="cro8" class="d c"></label><div class="cro d c"></div>
+		<input type="radio" id="cro9" name="noucro" /><label for="cro9" class="d r"></label><div class="cro d r"></div>
+
+		<input type="radio" id="nou1" name="noucro" /><label for="nou1" class="u l"></label><div class="nou u l"></div>
+		<input type="radio" id="nou2" name="noucro" /><label for="nou2" class="u c"></label><div class="nou u c"></div>
+		<input type="radio" id="nou3" name="noucro" /><label for="nou3" class="u r"></label><div class="nou u r"></div>
+		<input type="radio" id="nou4" name="noucro" /><label for="nou4" class="m l"></label><div class="nou m l"></div>
+		<input type="radio" id="nou5" name="noucro" /><label for="nou5" class="m c"></label><div class="nou m c"></div>
+		<input type="radio" id="nou6" name="noucro" /><label for="nou6" class="m r"></label><div class="nou m r"></div>
+		<input type="radio" id="nou7" name="noucro" /><label for="nou7" class="d l"></label><div class="nou d l"></div>
+		<input type="radio" id="nou8" name="noucro" /><label for="nou8" class="d c"></label><div class="nou d c"></div>
+		<input type="radio" id="nou9" name="noucro" /><label for="nou9" class="d r"></label><div class="nou d r"></div>
+
+		<div class="end-overlay-wrap">
+			<div class="e-cro-top-1"><div class="e-cro-top-2"><div class="e-cro-top-3 overlay"></div></div></div>
+			<div class="e-cro-mid-1"><div class="e-cro-mid-2"><div class="e-cro-mid-3 overlay"></div></div></div>
+			<div class="e-cro-bot-1"><div class="e-cro-bot-2"><div class="e-cro-bot-3 overlay"></div></div></div>
+			<div class="e-cro-lef-1"><div class="e-cro-lef-2"><div class="e-cro-lef-3 overlay"></div></div></div>
+			<div class="e-cro-cen-1"><div class="e-cro-cen-2"><div class="e-cro-cen-3 overlay"></div></div></div>
+			<div class="e-cro-rig-1"><div class="e-cro-rig-2"><div class="e-cro-rig-3 overlay"></div></div></div>
+			<div class="e-cro-for-1"><div class="e-cro-for-2"><div class="e-cro-for-3 overlay"></div></div></div>
+			<div class="e-cro-bac-1"><div class="e-cro-bac-2"><div class="e-cro-bac-3 overlay"></div></div></div>
+
+			<div class="e-nou-top-1"><div class="e-nou-top-2"><div class="e-nou-top-3 overlay"></div></div></div>
+			<div class="e-nou-mid-1"><div class="e-nou-mid-2"><div class="e-nou-mid-3 overlay"></div></div></div>
+			<div class="e-nou-bot-1"><div class="e-nou-bot-2"><div class="e-nou-bot-3 overlay"></div></div></div>
+			<div class="e-nou-lef-1"><div class="e-nou-lef-2"><div class="e-nou-lef-3 overlay"></div></div></div>
+			<div class="e-nou-cen-1"><div class="e-nou-cen-2"><div class="e-nou-cen-3 overlay"></div></div></div>
+			<div class="e-nou-rig-1"><div class="e-nou-rig-2"><div class="e-nou-rig-3 overlay"></div></div></div>
+			<div class="e-nou-for-1"><div class="e-nou-for-2"><div class="e-nou-for-3 overlay"></div></div></div>
+			<div class="e-nou-bac-1"><div class="e-nou-bac-2"><div class="e-nou-bac-3 overlay"></div></div></div>
+
+			<div class="e-all-1"><div class="e-all-2"><div class="e-all-3"><div class="e-all-4"><div class="e-all-5"><div class="e-all-6"><div class="e-all-7"><div class="e-all-8"><div class="e-all-9 overlay"></div></div></div></div></div></div></div></div></div>
+		</div>
+
+		<div class="end-tiles">
+			<div class="e-cro-top-1"><div class="e-cro-top-2"><div class="e-cro-top-3 end"><div class="cro u l"></div><div class="cro u c"></div><div class="cro u r"></div></div></div></div>
+			<div class="e-cro-mid-1"><div class="e-cro-mid-2"><div class="e-cro-mid-3 end"><div class="cro m l"></div><div class="cro m c"></div><div class="cro m r"></div></div></div></div>
+			<div class="e-cro-bot-1"><div class="e-cro-bot-2"><div class="e-cro-bot-3 end"><div class="cro d l"></div><div class="cro d c"></div><div class="cro d r"></div></div></div></div>
+			<div class="e-cro-lef-1"><div class="e-cro-lef-2"><div class="e-cro-lef-3 end"><div class="cro u l"></div><div class="cro m l"></div><div class="cro d l"></div></div></div></div>
+			<div class="e-cro-cen-1"><div class="e-cro-cen-2"><div class="e-cro-cen-3 end"><div class="cro u c"></div><div class="cro m c"></div><div class="cro d c"></div></div></div></div>
+			<div class="e-cro-rig-1"><div class="e-cro-rig-2"><div class="e-cro-rig-3 end"><div class="cro u r"></div><div class="cro m r"></div><div class="cro d r"></div></div></div></div>
+			<div class="e-cro-for-1"><div class="e-cro-for-2"><div class="e-cro-for-3 end"><div class="cro u r"></div><div class="cro m c"></div><div class="cro d l"></div></div></div></div>
+			<div class="e-cro-bac-1"><div class="e-cro-bac-2"><div class="e-cro-bac-3 end"><div class="cro u l"></div><div class="cro m c"></div><div class="cro d r"></div></div></div></div>
+
+			<div class="e-nou-top-1"><div class="e-nou-top-2"><div class="e-nou-top-3 end"><div class="nou u l"></div><div class="nou u c"></div><div class="nou u r"></div></div></div></div>
+			<div class="e-nou-mid-1"><div class="e-nou-mid-2"><div class="e-nou-mid-3 end"><div class="nou m l"></div><div class="nou m c"></div><div class="nou m r"></div></div></div></div>
+			<div class="e-nou-bot-1"><div class="e-nou-bot-2"><div class="e-nou-bot-3 end"><div class="nou d l"></div><div class="nou d c"></div><div class="nou d r"></div></div></div></div>
+			<div class="e-nou-lef-1"><div class="e-nou-lef-2"><div class="e-nou-lef-3 end"><div class="nou u l"></div><div class="nou m l"></div><div class="nou d l"></div></div></div></div>
+			<div class="e-nou-cen-1"><div class="e-nou-cen-2"><div class="e-nou-cen-3 end"><div class="nou u c"></div><div class="nou m c"></div><div class="nou d c"></div></div></div></div>
+			<div class="e-nou-rig-1"><div class="e-nou-rig-2"><div class="e-nou-rig-3 end"><div class="nou u r"></div><div class="nou m r"></div><div class="nou d r"></div></div></div></div>
+			<div class="e-nou-for-1"><div class="e-nou-for-2"><div class="e-nou-for-3 end"><div class="nou u r"></div><div class="nou m c"></div><div class="nou d l"></div></div></div></div>
+			<div class="e-nou-bac-1"><div class="e-nou-bac-2"><div class="e-nou-bac-3 end"><div class="nou u l"></div><div class="nou m c"></div><div class="nou d r"></div></div></div></div>
+
+			<div class="e-all-1"><div class="e-all-2"><div class="e-all-3"><div class="e-all-4"><div class="e-all-5"><div class="e-all-6"><div class="e-all-7"><div class="e-all-8"><div class="e-all-9 end"></div></div></div></div></div></div></div></div></div>
+		</div>
+
+		<div class="fake">
+			<div pos="ul" class="frap"><div class="nou u l"></div></div>
+			<div pos="uc" class="frap a"><div class="frap b"><div class="frap c"><div class="frap d"><div class="nou u c"></div></div></div></div></div>
+			<div pos="ur" class="frap"><div class="nou u r"></div></div>
+			<div pos="ml" class="frap"><div class="nou m l"></div></div>
+			<div pos="mc" class="frap"><div class="nou m c"></div></div>
+			<div pos="mr" class="frap a"><div class="frap b"><div class="nou m r"></div></div></div>
+			<div pos="dl" class="frap a"><div class="frap b"><div class="frap c"><div class="nou d l"></div></div></div></div>
+			<div pos="dc" class="frap"><div class="nou d c"></div></div>
+			<div pos="dr" class="frap"><div class="nou d r"></div></div>
+		</div>
+
+		<div class="fake-end">
+			<div class="end-overlay-wrap">
+				<div class="e-fake-nou-lef-0"><div class="e-fake-nou-lef-1"><div class="e-fake-nou-lef-2"><div class="e-fake-nou-lef-3 overlay"></div></div></div></div>
+				<div class="e-fake-nou-top-0"><div class="e-fake-nou-top-1"><div class="e-fake-nou-top-2"><div class="e-fake-nou-top-3"><div class="e-fake-nou-top-4 overlay"></div></div></div></div></div>
+
+				<div class="e-fake-cro-lef-1"><div class="e-fake-cro-lef-2"><div class="e-fake-cro-lef-3 overlay"></div></div></div>
+				<div class="e-fake-cro-rig-1"><div class="e-fake-cro-rig-2"><div class="e-fake-cro-rig-3 overlay"></div></div></div>
+				<div class="e-fake-cro-top-1"><div class="e-fake-cro-top-2"><div class="e-fake-cro-top-3 overlay"></div></div></div>
+				<div class="e-fake-cro-bot-1"><div class="e-fake-cro-bot-2"><div class="e-fake-cro-bot-3 overlay"></div></div></div>
+
+				<div class="e-fake-all-1"><div class="e-fake-all-2"><div class="e-fake-all-3"><div class="e-fake-all-4"><div class="e-fake-all-5 overlay"></div></div></div></div></div>
+			</div>
+
+			<div class="fake-end-tiles">
+				<div class="e-fake-nou-lef-0"><div class="e-fake-nou-lef-1"><div class="e-fake-nou-lef-2"><div class="e-fake-nou-lef-3 end">
+					<div class="nou u l"></div>
+					<div class="nou m l"></div>
+					<div class="nou d l"></div>
+				</div></div></div></div>
+				<div class="e-fake-nou-top-00"><div class="e-fake-nou-top-0"><div class="e-fake-nou-top-1"><div class="e-fake-nou-top-2"><div class="e-fake-nou-top-3"><div class="e-fake-nou-top-4 end">
+					<div class="nou u l"></div>
+					<div class="nou u c"></div>
+					<div class="nou u r"></div>
+				</div></div></div></div></div></div>
+
+				<div class="e-fake-cro-lef-1"><div class="e-fake-cro-lef-2"><div class="e-fake-cro-lef-3 end">
+					<div class="cro u l"></div>
+					<div class="cro m l"></div>
+					<div class="cro d l"></div>
+				</div></div></div>
+				<div class="e-fake-cro-rig-1"><div class="e-fake-cro-rig-2"><div class="e-fake-cro-rig-3 end">
+					<div class="cro u r"></div>
+					<div class="cro m r"></div>
+					<div class="cro d r"></div>
+				</div></div></div>
+				<div class="e-fake-cro-top-1"><div class="e-fake-cro-top-2"><div class="e-fake-cro-top-3 end">
+					<div class="cro u l"></div>
+					<div class="cro u c"></div>
+					<div class="cro u r"></div>
+				</div></div></div>
+				<div class="e-fake-cro-bot-1"><div class="e-fake-cro-bot-2"><div class="e-fake-cro-bot-3 end">
+					<div class="cro d l"></div>
+					<div class="cro d c"></div>
+					<div class="cro d r"></div>
+				</div></div></div>
+
+			</div>
+
+		</div>
+
+	</div>
+	<label for="reset" class="reset"></label>
+	<label for="comp"></label>
+</div>
