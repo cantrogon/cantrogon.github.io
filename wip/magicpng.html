@@ -247,6 +247,9 @@ function sumbitHandler() {
 	}
 
 	function contThing(argument) {
+		ins.forEach(x => updateProperties(x))
+		updateCanvasBackdrops();
+		
 		for (var i = 2; i >= 0; i--) {
 			if (insImgs[i].value === "")
 				data[i] = defaultData[i];
@@ -254,9 +257,6 @@ function sumbitHandler() {
 				data[i] = imgData(i,side[i].img,side[i].fit);
 		}
 		changedData = [];
-		
-		ins.forEach(x => updateProperties(x))
-		updateCanvasBackdrops();
 		
 		drawData();
 	}
