@@ -5,8 +5,8 @@
 		<option value="1">Image 2</option>
 		<option value="2">Custom</option>
 	</select><br/>
-	Width: <input id="w" type="number" min="1" value="600" required disabled><br/>
-	Height: <input id="h" type="number" min="1" value="600" required disabled><br/>
+	Width: <input id="w" type="number" min="1" max="32767" value="600" required disabled><br/>
+	Height: <input id="h" type="number" min="1" max="32767" value="600" required disabled><br/>
 	Automatic Contrast: <input id="autoContrast" type="checkbox" checked>
 	<span id="autoContrastValue"></span><br/>
 	Contrast Value: <input id="contrastValue" type="number" min="0" value="1" step="any" required disabled><br/>
@@ -43,6 +43,7 @@
 	Invert: <input id="invert2" type="checkbox"><br/>
 	<input id="submit" type="submit">
 	<input id="reset" type="reset">
+	<br/><br/><a id="download" href="#" download>download</a>
 	<br/><br/><div id="loading"></div>
 </form>
 
@@ -50,7 +51,6 @@
 	
 #output {
 	width: 600px;
-	height: 1200px;
 	float: left;
 }
 
@@ -100,7 +100,7 @@ var data = [];
 var output = document.getElementById('output');
 var c = [new Canvas(defaultP.w,defaultP.h,output), new Canvas(defaultP.w,defaultP.h,output)]
 
-var ins = {}, insImgs, changedData = [], changedImgs = [], changedCanvas;
+var ins = {}, insImgs, changedImgs = [];
 
 function resetProperties() {
 	p = JSON.parse(JSON.stringify(defaultP));
@@ -205,8 +205,6 @@ function setForm() {
 	for (var k = insImgs.length - 1; k >= 0; k--) {
 		insImgs[k].num = k;
 		insImgs[k].addEventListener('change', function(){if (this.value !== "") changedImgs[this.num] = true});
-		// insFits[k].num = k;
-		// insFits[k].addEventListener('change', function(){changedData[this.num] = true;});
 	}
 
 	document.getElementById('reverseBackdrops').addEventListener('click', function(e) {
@@ -261,7 +259,6 @@ function updateDimensions(n=2) {
 		c[i].canvas.width = p.w;
 		c[i].canvas.height = p.h;
 	}
-	changedData = [true,true];
 }
 
 function updateProperties() {
@@ -269,8 +266,6 @@ function updateProperties() {
 		var v = ins[k].getValue();
 		if (!ins[k].elm.disabled) {
 			ins[k].setProp();
-			if (ins[k].id === "fit" && !ins[k].matchProp())
-				changedData[ins[k].n] = true;
 		}
 	})
 }
@@ -283,48 +278,50 @@ function loadingStart() {
 function loadingEnd() {
 	console.log("END")
 	document.getElementById('loading').style.display = "none";
+	document.getElementById('download').href = c[0].canvas.toDataURL();
+}
+
+function loadImg(src,func) {
+	var img = new Image();
+	img.src = src;
+	img.onload = func;
+	return img;
 }
 
 function sumbitHandler() {
 
 	loadingStart();
 
-	var num = changedImgs.filter(x => x === true).length, counter = 0, doData = [];
-	if (changedImgs.includes(true)) {
+	var num = changedImgs.filter(x => x === true).length, counter = 0;
+	if (num) {
 		changedImgs.forEach((x,i) => {
-			if (x) {
-				doData[i] = true;
-				var img = new Image();
-				img.src = URL.createObjectURL(insImgs[i].files[0])
-				p.side[i].img = img;
-			    img.addEventListener("load", function() {
+			if (x)
+				loadImg(URL.createObjectURL(insImgs[i].files[0]), function() {
+					p.side[i].img = this;
 				    URL.revokeObjectURL(this.src);
-				    loadImg();
-				})
-			}
+				    imgLoaded();
+				});
 		})
 		changedImgs = [];
 	} else {
-		contThing();
+		proceed();
 	}
 
-	function loadImg() {
+	function imgLoaded() {
 		counter++;
 		if (counter === num) {
-			contThing();
+			proceed();
 		}
 	}
 
-	function contThing(argument) {
+	function proceed(argument) {
 		updateProperties();
 		updateCanvasBackdrops();
 		updateDimensions(p.dimensions);
 
 		for (var i = 1; i >= 0; i--) {
-			if (doData[i] || changedData[i])
-				data[i] = getImgData(i);
+			data[i] = getImgData(i);
 		}
-		changedData = [];
 		
 		drawData();
 
@@ -349,78 +346,42 @@ function drawData() {
 }
 
 function getData() {
-	var newData = new Uint8ClampedArray(p.w*p.h*4);
+	var newData = new Uint8ClampedArray(p.w*p.h*4), 
+		len = newData.length;
 
-	var minAvg = 0, lum = [];
-	for (var i = 0; i < newData.length; i+=4) {
-		// get initial luminosities
-		// lum[i] = [];
-		// for (var j = 0; j < 2; j++) {
-		// 	var raw = [data[j][i],data[j][i+1],data[j][i+2]];
-		// 	lum[i][j] = p.side[j].channel === 3 
-		// 		? raw.reduce((p,c) => p+c)/3/255 
-		// 		: raw[p.side[j].channel]/255;
-		// 	if (p.side[j].invert)
-		// 		lum[i][j] = 1-lum[i][j];
-		// }
-
-		// // get value for auto contrast
-		// var l1 = lum[i][0], l2 = lum[i][1];
-
-// var l1 =  p.side[0].channel === 3 ? [data[0][i],data[0][i+1],data[0][i+2]].reduce((p,c) => p+c)/3/255 : 0;
-// var l2 =  p.side[1].channel === 3 ? [data[1][i],data[1][i+1],data[1][i+2]].reduce((p,c) => p+c)/3/255 : 0;
-
+	function getLums(i) {
+		var lum = [];
 		for (var j = 0; j < 2; j++) {
 			var raw = [data[j][i],data[j][i+1],data[j][i+2]];
 			lum[j] = p.side[j].channel === 3 
 				? raw.reduce((p,c) => p+c)/3/255 
 				: raw[p.side[j].channel]/255;
 			if (p.side[j].invert)
-				lum[j] = 1-lum[j];
+				lum[j] = 1 - lum[j];
 		}
-		var l1 = lum[0], l2 = lum[1];
-// var l1 = data[0][i]/255;
-// var l2 = data[1][i]/255;
-		if ((l1+1-l2)/2 > minAvg) minAvg = (l1+1-l2)/2;
-		// if (l1-l2 > minAvg) minAvg = l1-l2;
-// minAvg = data[0][i]/255;
-// minAvg2 = data[1][i]/255;
-		// newData[i]   = minAvg * 255;
-		// newData[i+1]   = minAvg * 255;
-		// newData[i+2]   = minAvg * 255;
-		// newData[i+3]   = 255;
-
-		// lum[i][0] = l1;
-		// lum[i][1] = l2;
+		return lum;
 	}
 
 	// get value for auto contrast
-	p.autoContrastValue = Math.min(1/minAvg,2);
+	var maxDiff = 0;
+	for (var i = 0; i < len; i+=4) {
+		var l = getLums(i), l1 = l[0], l2 = l[1];
+		if (l1-l2 > maxDiff) maxDiff = l1-l2;
+	}
+	p.autoContrastValue = 2 / (maxDiff + 1);
 	var cval = p.autoContrast ? p.autoContrastValue : p.contrastValue;
 
-// if (false)
-	for (var i = 0; i < newData.length; i+=4) {
-
-// var l1 = data[0][i]/255;
-// var l2 = data[1][i]/255;
-		for (var j = 0; j < 2; j++) {
-			var raw = [data[j][i],data[j][i+1],data[j][i+2]];
-			lum[j] = p.side[j].channel === 3 
-				? raw.reduce((p,c) => p+c)/3/255 
-				: raw[p.side[j].channel]/255;
-			if (p.side[j].invert)
-				lum[j] = 1-lum[j];
-		}
-		var l1 = lum[0], l2 = lum[1];
-		// var l1 = lum[i][0], l2 = lum[i][1];
+	// main loop
+	for (var i = 0; i < len; i+=4) {
+		var l = getLums(i), l1 = l[0], l2 = l[1];
 
 		// seperate luminosities
 		l1 /= 2;
 		l2 = (l2 + 1) / 2;
 
-		// change contrast
+		// adjust contrast
 		l1 *= cval;
-		l2 = 1 - (1-l2) * cval;
+		l2 = 1 - (1 - l2) * cval;
 
 		// get final alpha and luminosity
 		function getLum(x,y) {return x / (1 - y + x);}
