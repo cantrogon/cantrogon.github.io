@@ -8,8 +8,8 @@
 	Width: <input id="w" type="number" min="1" max="32767" value="600" required disabled><br/>
 	Height: <input id="h" type="number" min="1" max="32767" value="600" required disabled><br/>
 	Automatic Contrast: <input id="autoContrast" type="checkbox" checked>
-	<span id="autoContrastValue"></span><br/>
-	Contrast Value: <input id="contrastValue" type="number" min="0" value="1" step="any" required disabled><br/>
+	<span id="autoContrastValue">0.00</span><br/>
+	Contrast Value: <input id="contrastValue" type="number" min="0" value="0.5" step="any" required disabled><br/>
 	<input id="reverseBackdrops" type="button" value="Reverse Backdrops"><br/>
 	Picture 1: <br/>
 	Backdrop: <input id="color1" type="color" value="#000000"><br/>
@@ -51,7 +51,9 @@
 	
 #output {
 	width: 600px;
+	min-height: 100%;
 	float: left;
+	margin-right: 15px;
 }
 
 #output canvas {
@@ -60,9 +62,12 @@
 
 #loading {
 	display: none;
-	width: 20px;
-	height: 20px;
-	background: black;
+	width: 30px;
+	height: 30px;
+	box-sizing: border-box;
+	border: 5px solid black;
+	border-top-color: transparent;
+	border-radius: 50%;
 	animation: spin 5s linear infinite;
 }
 
@@ -70,40 +75,25 @@
 	to {transform: rotate(360deg);}
 }
 
+#download {
+	visibility: hidden;
+}
+
 </style>
 
 <script type="text/javascript">
 
-var p = {}
-var defaultP = {
-	w: 600,
-	h: 600,
-	dimensions: 0,
-	autoContrast: true,
-	contrastValue: 1,
-	autoContrastValue: 0,
-	side: [{
-		color: [0,0,0],
-		fit: 0,
-		channel: 3,
-		invert: false
-	},{
-		color: [255,255,255],
-		fit: 0,
-		channel: 3,
-		invert: false
-	}]
-}
+var p = {side: [{},{}]}, data = [], c, ins = {}, insImgs, changedImgs = [], downloadOn;
 
-var data = [];
+window.addEventListener('load',function() {
+	loadHandler();
+})
 
-var output = document.getElementById('output');
-var c = [new Canvas(defaultP.w,defaultP.h,output), new Canvas(defaultP.w,defaultP.h,output)]
-
-var ins = {}, insImgs, changedImgs = [];
-
-function resetProperties() {
-	p = JSON.parse(JSON.stringify(defaultP));
+function loadHandler() {
+	setCanvases();
+	setForm();
+	updateProperties();
+	updateCanvasBackdrops();
 }
 
 function Canvas(w,h,elm=null) {
@@ -118,20 +108,15 @@ function Canvas(w,h,elm=null) {
 	this.ctx = ctx;
 }
 
+function setCanvases() {
+	var output = document.getElementById('output');
+	c = [new Canvas(1,1,output), new Canvas(1,1,output)]
+}
+
 function updateCanvasBackdrops() {
 	for (var i = c.length - 1; i >= 0; i--) {
 		c[i].canvas.style.background = arrToRgb(p.side[i].color);
 	}
-}
-
-window.addEventListener('load',function() {
-	loadHandler();
-})
-
-function loadHandler() {
-	resetProperties();
-	setForm();
-	setAutoContrastLabel();
 }
 
 function setForm() {
@@ -143,10 +128,9 @@ function setForm() {
 	inputs.forEach(elm => {
 		ins[elm.id] = {
 			elm: elm,
-			type: elm.tagName === "INPUT" ? elm.type : "select",
+			type: elm.tagName === "INPUT" ? elm.id !== "contrastValue" ? elm.type : "numberf" : "select",
 			id: elm.id.match(/\D+/)[0],
 			n: elm.id.match(/\d/) ? elm.id.match(/\d/)[0] - 1 : null,
-			// children: elm.children,
 			disable: function() {
 				this.elm.disabled = true;	
 			},
@@ -160,22 +144,13 @@ function setForm() {
 					case "select":
 					case "number":
 						return parseInt(this.elm.value);
+					case "numberf":
+						return parseFloat(this.elm.value)
 					case "color":
 						return hexToRgb(this.elm.value);
 					default:
 						return this.elm.value;
 				}
-			},
-			getProp: function() {
-				return this.n === null
-					? p[this.id]
-					: p.side[this.n][this.id];
-			},
-			matchProp: function() {
-				var v = this.getValue(), p = this.getProp();
-				return this.type === "color"
-					? v.every((x,i) => x === p[i])
-					: v === p;
 			},
 			setProp: function() {
 				var v = this.getValue();
@@ -184,40 +159,23 @@ function setForm() {
 				else
 					p.side[this.n][this.id] = v;
 			}
-			// setVal: function() {
-			// 	if (this.type === "checkbox" && n === null)
-			// 		this.elm.checked = p[this.id];
-			// 	else if (this.type === "checkbox")
-			// 		this.elm.checked = p[this.n][this.id];
-			// 	else if (this.type === "number")
-			// 		this.elm.value = p[this.id];
-			// 	else if (true) {}
-			// 		p.side[this.n][this.id] = this.getVal();
-			// }
 		}
-
 	})
 
-
-	var insFits = document.querySelectorAll('select[id^=fit]');
-
 	insImgs = document.querySelectorAll('input[type=file]');
-	for (var k = insImgs.length - 1; k >= 0; k--) {
-		insImgs[k].num = k;
-		insImgs[k].addEventListener('change', function(){if (this.value !== "") changedImgs[this.num] = true});
+	for (var i = 1; i >= 0; i--) {
+		insImgs[i].num = i;
+		insImgs[i].addEventListener('change', function(){
+			if (this.value !== "") changedImgs[this.num] = true;
+		});
 	}
 
 	document.getElementById('reverseBackdrops').addEventListener('click', function(e) {
 		e.preventDefault();
-		var col1 = document.getElementById('color1')
-		var col2 = document.getElementById('color2')
-		var temp = col2.value;
-		col2.value = col1.value;
-		col1.value = temp;
+		var temp = ins.color1.elm.value;
+		ins.color1.elm.value = ins.color2.elm.value;
+		ins.color2.elm.value = temp;
 	})
-
-	var dimensions = document.getElementById('dimensions');
-	var sels = dimensions.children;	
 
 	ins.autoContrast.elm.addEventListener('change', function() {
 		if (this.checked)
@@ -237,19 +195,24 @@ function setForm() {
 	})
 
 	document.getElementById('reset').addEventListener('click', e => {
-		ins.contrastValue.disable();
-		ins.w.disable();
-		ins.h.disable();
+		setFormDisabled();
 	})
 
 	document.getElementById('properties').addEventListener('submit', e => {
 		e.preventDefault();
 		sumbitHandler();
 	})
-
 }
 
-function updateDimensions(n=2) {
+function setFormDisabled() {
+	ins.contrastValue.disable();
+	ins.w.disable();
+	ins.h.disable();
+}
+
+function updateDimensions() {
+	var n = p.dimensions;
+
 	if (n !== 2) {
 		p.w = p.side[n].img.width;
 		p.h = p.side[n].img.height;
@@ -262,11 +225,9 @@ function updateDimensions(n=2) {
 }
 
 function updateProperties() {
-	Object.keys(ins).forEach((k,i) => {
-		var v = ins[k].getValue();
-		if (!ins[k].elm.disabled) {
+	Object.keys(ins).forEach(k => {
+		if (!ins[k].elm.disabled)
 			ins[k].setProp();
-		}
 	})
 }
 
@@ -278,65 +239,61 @@ function loadingStart() {
 function loadingEnd() {
 	console.log("END")
 	document.getElementById('loading').style.display = "none";
+	document.getElementById('autoContrastValue').innerText = p.autoContrastValue.toFixed(2);
+	if (!downloadOn) {
+		document.getElementById('download').style.visibility = "visible";
+		downloadOn = true;
+	}
 	document.getElementById('download').href = c[0].canvas.toDataURL();
 }
 
-function loadImg(src,func) {
-	var img = new Image();
-	img.src = src;
-	img.onload = func;
-	return img;
+function loadImage(url,callback) {
+	var image = new Image();
+	image.src = url;
+	image.onload = callback;
+	return image;
 }
 
 function sumbitHandler() {
-
 	loadingStart();
 
-	var num = changedImgs.filter(x => x === true).length, counter = 0;
+	var num = changedImgs.filter(x => x).length;
 	if (num) {
 		changedImgs.forEach((x,i) => {
 			if (x)
-				loadImg(URL.createObjectURL(insImgs[i].files[0]), function() {
+				loadImage(URL.createObjectURL(insImgs[i].files[0]), function() {
 					p.side[i].img = this;
-				    URL.revokeObjectURL(this.src);
-				    imgLoaded();
+					URL.revokeObjectURL(this.src);
+					onImageLoad();
 				});
-		})
+		});
 		changedImgs = [];
 	} else {
 		proceed();
 	}
 
-	function imgLoaded() {
-		counter++;
-		if (counter === num) {
+	function onImageLoad() {
+		if (--num === 0)
 			proceed();
-		}
 	}
 
-	function proceed(argument) {
-		updateProperties();
-		updateCanvasBackdrops();
-		updateDimensions(p.dimensions);
-
-		for (var i = 1; i >= 0; i--) {
-			data[i] = getImgData(i);
-		}
-		
-		drawData();
-
-		setAutoContrastLabel();
-
-		loadingEnd();
+	function proceed() {
+		window.setTimeout(function() {
+			updateProperties();
+			updateDimensions();
+			updateCanvasBackdrops();
+			setImgData();
+			drawData();
+			loadingEnd();
+		},0)
 	}
 }
 
-function setAutoContrastLabel() {
-	document.getElementById('autoContrastValue').innerText = p.autoContrastValue.toFixed(2);
+function setImgData() {
+	for (var i = 1; i >= 0; i--) {
+		data[i] = imgData(i,p.side[i].img,p.side[i].fit,p.side[i].invert);
+	}
 }
-
-
-
 
 function drawData() {
 	var imgData = c[0].ctx.createImageData(p.w,p.h);
@@ -349,6 +306,7 @@ function getData() {
 	var newData = new Uint8ClampedArray(p.w*p.h*4), 
 		len = newData.length;
 
+	// get initial luminosities
 	function getLums(i) {
 		var lum = [];
 		for (var j = 0; j < 2; j++) {
@@ -364,49 +322,36 @@ function getData() {
 
 	// get value for auto contrast
 	var maxDiff = 0;
-	for (var i = 0; i < len; i+=4) {
+	for (var i = 0; i < len; i += 4) {
 		var l = getLums(i), l1 = l[0], l2 = l[1];
-		if (l1-l2 > maxDiff) maxDiff = l1-l2;
+		if (l1 - l2 > maxDiff) maxDiff = l1 - l2;
 	}
-	p.autoContrastValue = 2 / (maxDiff + 1);
+	p.autoContrastValue = 1 / (maxDiff + 1);
 	var cval = p.autoContrast ? p.autoContrastValue : p.contrastValue;
 
+	// necessary functions
+	function getLum(x,y) {return x / (1 - y + x)}
+	function getAlp(x,y) {return (1 - y + x) * cval}
+	function setBackdrops(l,c1,c2) {return (c2 - c1) * l + c1}
+
 	// main loop
-	for (var i = 0; i < len; i+=4) {
-		var l = getLums(i), l1 = l[0], l2 = l[1];
+	for (var i = 0; i < len; i += 4) {
+		var lums = getLums(i), l1 = lums[0], l2 = lums[1];
 
-		// seperate luminosities
-		l1 /= 2;
-		l2 = (l2 + 1) / 2;
-
-		// adjust contrast
-		l1 *= cval;
-		l2 = 1 - (1 - l2) * cval;
-
-		// get final alpha and luminosity
-		function getLum(x,y) {return x / (1 - y + x);}
-		function getAlp(x,y) {return 1 - y + x;}
-
-		var l = getLum(l1,l2);
-		var fl = [l,l,l];
-		var fa = getAlp(l1,l2);
+		// new luminosities
+		var l = getLum(l1,l2), fl = [l,l,l];
 
 		// backdrop colors
-		function setBackdrops(l,c1,c2) {return (c2 - c1) * l + c1}
-		fl = fl.map((x,i) => setBackdrops(x,p.side[0].color[i]/255,p.side[1].color[i]/255))
+		fl = fl.map((x,i) => setBackdrops(x, p.side[0].color[i]/255, p.side[1].color[i]/255))
 
 		fl = fl.map(x => x*255);
 		newData[i]   = fl[0];
 		newData[i+1] = fl[1];
 		newData[i+2] = fl[2];
-		newData[i+3] = fa*255;
+		newData[i+3] = getAlp(l1,l2) * 255;
 	}
 
 	return newData;
-}
-
-function getImgData(i) {
-	return imgData(i,p.side[i].img,p.side[i].fit,p.side[i].invert);
 }
 
 function imgData(back,img,fit,invert) {
@@ -414,22 +359,21 @@ function imgData(back,img,fit,invert) {
 		canvas = new Canvas(w,h),
 		ctx = canvas.ctx;
 
-	// image fit
+	// fit image
 	var iw, ih;
 	if (fit < 2) {
-		var ratioOut = w/h;
-		var ratioIn = img.width/img.height;
+		var ratioOut = w / h;
+		var ratioIn = img.width / img.height;
 		var isVert = ratioIn < ratioOut;
 		if (fit === 1) isVert = !isVert;
-		if (isVert) {ih = h; iw = ih*ratioIn;}
-		else {iw = w; ih = iw/ratioIn;}
-	} else {
-		iw = w;
-		ih = h;
-	}
+		if (isVert) {ih = h; iw = ih * ratioIn;}
+		else {iw = w; ih = iw / ratioIn;}
+	} else {iw = w; ih = h;}
 
+	// invert backgrounds
 	if (invert) back = !back;
 
+	// set backgrounds
 	if (back) ctx.fillStyle = "#ffffff";
 	else ctx.fillStyle = "#000000";
 	ctx.fillRect(0,0,w,h);
@@ -439,7 +383,7 @@ function imgData(back,img,fit,invert) {
 	// document.body.appendChild(canvas);
 	// document.body.appendChild(img);
 
-	return ctx.getImageData(0,0,p.w,p.h).data
+	return ctx.getImageData(0,0,w,h).data
 }
 
 function arrToRgb(arr) {
