@@ -200,7 +200,7 @@ function setForm() {
 	})
 
 	ins.dimensions.elm.addEventListener('change', function() {
-		if (this.value === "2") {
+		if (this.selectedIndex === 2) {
 			ins.w.enable();
 			ins.h.enable();
 		} else {
