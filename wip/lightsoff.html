@@ -1,0 +1,106 @@
+<div id="main">
+	<div id="overlay"></div>
+</div>
+
+<style type="text/css">
+	
+#main {
+	width: 600px;
+	height: 600px;
+	position: relative;
+	margin: 0 auto;
+	background: black;
+	overflow: hidden;
+}
+
+#overlay {
+	pointer-events: none;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	position: absolute;
+	background: repeating-linear-gradient(to right, black 0% 5%, transparent 5% 95%, black 95% 100%), 
+				repeating-linear-gradient(to bottom, black 0% 5%, transparent 5% 95%, black 95% 100%);
+	background-size: 20% 20%;
+	z-index: 50;
+}
+
+input {
+	display: none;
+}
+
+.tile {
+	display: block;
+	cursor: pointer;
+	width: 20%;
+	height: 20%;
+	float: left;
+	box-sizing: border-box;
+}
+
+.wrap {
+	width: 100%;
+	height: 100%;
+	mix-blend-mode: difference;
+	display: none;
+	position: relative;
+	pointer-events: none;
+}
+
+.light1, .light2 {
+	background: gold;
+	position: absolute;
+}
+
+.light1 {
+	width: 100%;
+	height: 300%;
+	top: -100%;
+	left: 0;
+}
+
+.light2 {
+	width: 300%;
+	height: 100%;
+	top: 0;
+	left: -100%;
+}
+
+input:checked + .tile .wrap {
+	display: block;
+}
+
+</style>
+
+<script type="text/javascript">
+	
+var main = document.getElementById('main');
+var tileNum = 25;
+
+function createElement(tag,cls='') {
+	var elm = document.createElement(tag);
+	elm.classList.add(cls)
+	return elm;
+}
+
+for (var i = 0; i < tileNum; i++) {
+	var input = document.createElement('input')
+	input.type = "checkbox";
+	input.id = "cb" + i;
+
+	var tile = createElement("label","tile")
+	tile.setAttribute('for',"cb" + i);
+
+	var wrap = createElement("div","wrap")
+	var light1 = createElement("div","light1")
+	var light2 = createElement("div","light2")
+
+	wrap.appendChild(light1)
+	wrap.appendChild(light2)
+	tile.appendChild(wrap)
+	main.appendChild(input)
+	main.appendChild(tile)
+}
+
+</script>

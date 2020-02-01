@@ -1,9 +1,9 @@
-<div id="output"></div>
+<h1 id="heading">MagicPNG - Opacity-based image merging</h1>
 <form id="properties">
 	Dimensions: <select id="dimensions">
-		<option value="0">Image 1</option>
-		<option value="1">Image 2</option>
-		<option value="2">Custom</option>
+		<option selected>Image 1</option>
+		<option>Image 2</option>
+		<option>Custom</option>
 	</select><br/>
 	Width: <input id="w" type="number" min="1" max="32767" value="600" required disabled><br/>
 	Height: <input id="h" type="number" min="1" max="32767" value="600" required disabled><br/>
@@ -11,53 +11,67 @@
 	<span id="autoContrastValue">0.00</span><br/>
 	Contrast Value: <input id="contrastValue" type="number" min="0" value="0.5" step="any" required disabled><br/>
 	<input id="reverseBackdrops" type="button" value="Reverse Backdrops"><br/>
-	Picture 1: <br/>
+	<br/>Image 1: <br/>
 	Backdrop: <input id="color1" type="color" value="#000000"><br/>
-	Image: <input id="img1" type="file" accept="image/*" required><br/>
+	File: <input id="img1" type="file" accept="image/*" required><br/>
 	Fit: <select id="fit1">
-		<option value="0">Contain</option>
-		<option value="1">Fill</option>
-		<option value="2">Stretch</option>
+		<option selected>Contain</option>
+		<option>Fill</option>
+		<option>Stretch</option>
 	</select><br/>
-	Channel: <select id="channel1">
-		<option value="3">Average</option>
-		<option value="0">Red</option>
-		<option value="1">Green</option>
-		<option value="2">Blue</option>
+	Grayscale: <select id="grayscale1">
+		<option>Average</option>
+		<option selected>Luma</option>
+		<option>Desaturated</option>
+		<option>Red</option>
+		<option>Green</option>
+		<option>Blue</option>
+		<option>Min</option>
+		<option>Max</option>
 	</select><br/>
 	Invert: <input id="invert1" type="checkbox"><br/>
-	Picture 2: <br/>
+	<br/>Image 2: <br/>
 	Backdrop: <input id="color2" type="color" value="#ffffff"><br/>
-	Image: <input id="img2" type="file" accept="image/*" required><br/>
+	File: <input id="img2" type="file" accept="image/*" required><br/>
 	Fit: <select id="fit2">
-		<option value="0">Contain</option>
-		<option value="1">Fill</option>
-		<option value="2">Stretch</option>
+		<option selected>Contain</option>
+		<option>Fill</option>
+		<option>Stretch</option>
 	</select><br/>
-	Channel: <select id="channel2">
-		<option value="3">Average</option>
-		<option value="0">Red</option>
-		<option value="1">Green</option>
-		<option value="2">Blue</option>
+	Grayscale: <select id="grayscale2">
+		<option>Average</option>
+		<option selected>Luma</option>
+		<option>Desaturated</option>
+		<option>Red</option>
+		<option>Green</option>
+		<option>Blue</option>
+		<option>Min</option>
+		<option>Max</option>
 	</select><br/>
 	Invert: <input id="invert2" type="checkbox"><br/>
-	<input id="submit" type="submit">
+	<br/><input id="submit" type="submit">
 	<input id="reset" type="reset">
 	<br/><br/><a id="download" href="#" download>download</a>
 	<br/><br/><div id="loading"></div>
 </form>
+<div id="output"></div>
 
 <style type="text/css">
+
+#properties {
+	float: left;
+}
 	
 #output {
-	width: 600px;
-	min-height: 100%;
-	float: left;
-	margin-right: 15px;
+	width: 1200px;
+	max-width: 100%;
+	float: right;
 }
 
 #output canvas {
-	width: 100%;
+	width: calc(50% - 20px);
+	float: left;
+	border: 10px solid black;
 }
 
 #loading {
@@ -83,7 +97,7 @@
 
 <script type="text/javascript">
 
-var p = {side: [{},{}]}, data = [], c, ins = {}, insImgs, changedImgs = [], downloadOn;
+let p = {side: [{},{}]}, data = [], c, ins = {}, insImgs, changedImgs = [], downloadOn;
 
 window.addEventListener('load',function() {
 	loadHandler();
@@ -97,7 +111,7 @@ function loadHandler() {
 }
 
 function Canvas(w,h,elm=null) {
-	var canvas = document.createElement('canvas'),
+	let canvas = document.createElement('canvas'),
 		ctx = canvas.getContext('2d');
 	canvas.width = w;
 	canvas.height = h;
@@ -109,18 +123,18 @@ function Canvas(w,h,elm=null) {
 }
 
 function setCanvases() {
-	var output = document.getElementById('output');
+	let output = document.getElementById('output');
 	c = [new Canvas(1,1,output), new Canvas(1,1,output)]
 }
 
 function updateCanvasBackdrops() {
-	for (var i = c.length - 1; i >= 0; i--) {
+	for (let i = c.length - 1; i >= 0; i--) {
 		c[i].canvas.style.background = arrToRgb(p.side[i].color);
 	}
 }
 
 function setForm() {
-	var inputs = [
+	let inputs = [
 		...document.querySelectorAll('input:not([type=file]):not([type=button]):not([type=submit]):not([type=reset])'),
 		...document.getElementsByTagName('select')
 	]
@@ -132,7 +146,7 @@ function setForm() {
 			id: elm.id.match(/\D+/)[0],
 			n: elm.id.match(/\d/) ? elm.id.match(/\d/)[0] - 1 : null,
 			disable: function() {
-				this.elm.disabled = true;	
+				this.elm.disabled = true;
 			},
 			enable: function() {
 				this.elm.disabled = false;	
@@ -142,6 +156,7 @@ function setForm() {
 					case "checkbox":
 						return this.elm.checked;
 					case "select":
+						return this.elm.selectedIndex;
 					case "number":
 						return parseInt(this.elm.value);
 					case "numberf":
@@ -153,7 +168,7 @@ function setForm() {
 				}
 			},
 			setProp: function() {
-				var v = this.getValue();
+				let v = this.getValue();
 				if (this.n === null)
 					p[this.id] = v;
 				else
@@ -163,7 +178,7 @@ function setForm() {
 	})
 
 	insImgs = document.querySelectorAll('input[type=file]');
-	for (var i = 1; i >= 0; i--) {
+	for (let i = 1; i >= 0; i--) {
 		insImgs[i].num = i;
 		insImgs[i].addEventListener('change', function(){
 			if (this.value !== "") changedImgs[this.num] = true;
@@ -172,7 +187,7 @@ function setForm() {
 
 	document.getElementById('reverseBackdrops').addEventListener('click', function(e) {
 		e.preventDefault();
-		var temp = ins.color1.elm.value;
+		let temp = ins.color1.elm.value;
 		ins.color1.elm.value = ins.color2.elm.value;
 		ins.color2.elm.value = temp;
 	})
@@ -211,14 +226,14 @@ function setFormDisabled() {
 }
 
 function updateDimensions() {
-	var n = p.dimensions;
+	let n = p.dimensions;
 
 	if (n !== 2) {
 		p.w = p.side[n].img.width;
 		p.h = p.side[n].img.height;
 	}
 
-	for (var i = 1; i >= 0; i--) {
+	for (let i = 1; i >= 0; i--) {
 		c[i].canvas.width = p.w;
 		c[i].canvas.height = p.h;
 	}
@@ -248,7 +263,7 @@ function loadingEnd() {
 }
 
 function loadImage(url,callback) {
-	var image = new Image();
+	let image = new Image();
 	image.src = url;
 	image.onload = callback;
 	return image;
@@ -257,7 +272,7 @@ function loadImage(url,callback) {
 function sumbitHandler() {
 	loadingStart();
 
-	var num = changedImgs.filter(x => x).length;
+	let num = changedImgs.filter(x => x).length;
 	if (num) {
 		changedImgs.forEach((x,i) => {
 			if (x)
@@ -290,44 +305,63 @@ function sumbitHandler() {
 }
 
 function setImgData() {
-	for (var i = 1; i >= 0; i--) {
+	for (let i = 1; i >= 0; i--) {
 		data[i] = imgData(i,p.side[i].img,p.side[i].fit,p.side[i].invert);
 	}
 }
 
 function drawData() {
-	var imgData = c[0].ctx.createImageData(p.w,p.h);
+	let imgData = c[0].ctx.createImageData(p.w,p.h);
 	imgData.data.set(getData());
 	c[0].ctx.putImageData(imgData,0,0)
 	c[1].ctx.putImageData(imgData,0,0)
 }
 
+function getGrayscale(type,r,g,b) {
+	switch (type) {
+		case 0:
+			return (r + g + b) / 3;
+		case 1:
+			return r * 0.2126 + g * 0.7152 + b * 0.0722;
+		case 2:
+			return (Math.max(r,g,b) + Math.min(r,g,b)) / 2;
+		case 3:
+			return r;
+		case 4:
+			return g;
+		case 5:
+			return b;
+		case 6:
+			return Math.min(r,g,b);
+		case 7:
+			return Math.max(r,g,b);
+	}
+}
+
+function getLums(i) {
+	// get initial luminosities
+	let lum = [];
+	for (let j = 0; j < 2; j++) {
+		let raw = [data[j][i],data[j][i+1],data[j][i+2]].map(x => x / 255);
+		lum[j] = getGrayscale(p.side[j].grayscale,...raw);
+		if (p.side[j].invert)
+			lum[j] = 1 - lum[j];
+	}
+	return lum;
+}
+
 function getData() {
-	var newData = new Uint8ClampedArray(p.w*p.h*4), 
+	let newData = new Uint8ClampedArray(p.w*p.h*4), 
 		len = newData.length;
 
-	// get initial luminosities
-	function getLums(i) {
-		var lum = [];
-		for (var j = 0; j < 2; j++) {
-			var raw = [data[j][i],data[j][i+1],data[j][i+2]];
-			lum[j] = p.side[j].channel === 3 
-				? raw.reduce((p,c) => p+c)/3/255 
-				: raw[p.side[j].channel]/255;
-			if (p.side[j].invert)
-				lum[j] = 1 - lum[j];
-		}
-		return lum;
-	}
-
 	// get value for auto contrast
-	var maxDiff = 0;
-	for (var i = 0; i < len; i += 4) {
-		var l = getLums(i), l1 = l[0], l2 = l[1];
+	let maxDiff = 0;
+	for (let i = 0; i < len; i += 4) {
+		let l = getLums(i), l1 = l[0], l2 = l[1];
 		if (l1 - l2 > maxDiff) maxDiff = l1 - l2;
 	}
 	p.autoContrastValue = 1 / (maxDiff + 1);
-	var cval = p.autoContrast ? p.autoContrastValue : p.contrastValue;
+	let cval = p.autoContrast ? p.autoContrastValue : p.contrastValue;
 
 	// necessary functions
 	function getLum(x,y) {return x / (1 - y + x)}
@@ -335,11 +369,11 @@ function getData() {
 	function setBackdrops(l,c1,c2) {return (c2 - c1) * l + c1}
 
 	// main loop
-	for (var i = 0; i < len; i += 4) {
-		var lums = getLums(i), l1 = lums[0], l2 = lums[1];
+	for (let i = 0; i < len; i += 4) {
+		let lums = getLums(i), l1 = lums[0], l2 = lums[1];
 
 		// new luminosities
-		var l = getLum(l1,l2), fl = [l,l,l];
+		let l = getLum(l1,l2), fl = [l,l,l];
 
 		// backdrop colors
 		fl = fl.map((x,i) => setBackdrops(x, p.side[0].color[i]/255, p.side[1].color[i]/255))
@@ -355,16 +389,16 @@ function getData() {
 }
 
 function imgData(back,img,fit,invert) {
-	var w = p.w, h = p.h,
+	let w = p.w, h = p.h,
 		canvas = new Canvas(w,h),
 		ctx = canvas.ctx;
 
 	// fit image
-	var iw, ih;
+	let iw, ih;
 	if (fit < 2) {
-		var ratioOut = w / h;
-		var ratioIn = img.width / img.height;
-		var isVert = ratioIn < ratioOut;
+		let ratioOut = w / h;
+		let ratioIn = img.width / img.height;
+		let isVert = ratioIn < ratioOut;
 		if (fit === 1) isVert = !isVert;
 		if (isVert) {ih = h; iw = ih * ratioIn;}
 		else {iw = w; ih = iw / ratioIn;}
