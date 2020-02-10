@@ -11,7 +11,8 @@
 	<span id="autoContrastValue">0.00</span><br/>
 	Contrast Value: <input id="contrastValue" type="number" min="0" value="0.5" step="any" required disabled><br/>
 	<input id="reverseBackdrops" type="button" value="Reverse Backdrops"><br/>
-	<br/>Image 1: <br/>
+	<br/>
+	Image 1: <br/>
 	Backdrop: <input id="color1" type="color" value="#000000"><br/>
 	File: <input id="img1" type="file" accept="image/*" required><br/>
 	Fit: <select id="fit1">
@@ -30,7 +31,8 @@
 		<option>Max</option>
 	</select><br/>
 	Invert: <input id="invert1" type="checkbox"><br/>
-	<br/>Image 2: <br/>
+	<br/>
+	Image 2: <br/>
 	Backdrop: <input id="color2" type="color" value="#ffffff"><br/>
 	File: <input id="img2" type="file" accept="image/*" required><br/>
 	Fit: <select id="fit2">
@@ -49,7 +51,13 @@
 		<option>Max</option>
 	</select><br/>
 	Invert: <input id="invert2" type="checkbox"><br/>
-	<br/><input id="submit" type="submit">
+	<br/>
+	Overlay: <br/>
+	Do Overlay: <input id="doOverlay" type="checkbox"><br/>
+	Color: <input id="colorOverlay" type="color" value="#ff0000" disabled><br/>
+	Density: <input id="densityOverlay" type="number" min="0" value="0.5" step="any" required disabled><br/>
+	<br/>
+	<input id="submit" type="submit">
 	<input id="reset" type="reset">
 	<br/><br/><a id="download" href="#" download>download</a>
 	<br/><br/><div id="loading"></div>
@@ -93,11 +101,15 @@
 	visibility: hidden;
 }
 
+input[type=color]:disabled {
+	background: #dcdcd0;
+}
+
 </style>
 
 <script type="text/javascript">
 
-let p = {side: [{},{}]}, data = [], c, ins = {}, insImgs, changedImgs = [], downloadOn;
+let p = {side: [{},{}]}, data = [], c, ins = {}, insImgs, changedImgs = [], downloadOn, calcRunnning;
 
 window.addEventListener('load',function() {
 	loadHandler();
@@ -142,7 +154,7 @@ function setForm() {
 	inputs.forEach(elm => {
 		ins[elm.id] = {
 			elm: elm,
-			type: elm.tagName === "INPUT" ? elm.id !== "contrastValue" ? elm.type : "numberf" : "select",
+			type: elm.tagName === "INPUT" ? elm.step !== "any" ? elm.type : "numberf" : "select",
 			id: elm.id.match(/\D+/)[0],
 			n: elm.id.match(/\d/) ? elm.id.match(/\d/)[0] - 1 : null,
 			disable: function() {
@@ -209,13 +221,23 @@ function setForm() {
 		}
 	})
 
+	ins.doOverlay.elm.addEventListener('change', function() {
+		if (this.checked) {
+			ins.colorOverlay.enable();
+			ins.densityOverlay.enable();
+		} else {
+			ins.colorOverlay.disable();
+			ins.densityOverlay.disable();
+		}
+	})
+
 	document.getElementById('reset').addEventListener('click', e => {
 		setFormDisabled();
 	})
 
 	document.getElementById('properties').addEventListener('submit', e => {
 		e.preventDefault();
-		sumbitHandler();
+		if (!calcRunnning) sumbitHandler();
 	})
 }
 
@@ -223,6 +245,8 @@ function setFormDisabled() {
 	ins.contrastValue.disable();
 	ins.w.disable();
 	ins.h.disable();
+	ins.colorOverlay.disable();
+	ins.densityOverlay.disable();
 }
 
 function updateDimensions() {
@@ -249,6 +273,7 @@ function updateProperties() {
 function loadingStart() {
 	console.log("START")
 	document.getElementById('loading').style.display = "inline-block";
+	calcRunnning = true;
 }
 
 function loadingEnd() {
@@ -260,6 +285,7 @@ function loadingEnd() {
 		downloadOn = true;
 	}
 	document.getElementById('download').href = c[0].canvas.toDataURL();
+	calcRunnning = false;
 }
 
 function loadImage(url,callback) {
@@ -293,7 +319,7 @@ function sumbitHandler() {
 	}
 
 	function proceed() {
-		window.setTimeout(function() {
+		setTimeout(function() {
 			updateProperties();
 			updateDimensions();
 			updateCanvasBackdrops();
@@ -350,6 +376,16 @@ function getLums(i) {
 	return lum;
 }
 
+// necessary functions
+function getLum(x,y) {return x / (1 - y + x)}
+function getAlp(x,y,c=0.5) {return (1 - y + x) * c}
+function getOverlayLum(l,a,cl,ca,fa) {
+	if (a === 0) return cl;
+	return (cl * ca + l * a * (1 - ca)) / fa
+}
+function getOverlayAlp(a,ca) {return ca + a * (1 - ca)}
+function setBackdrops(l,c1,c2) {return (c2 - c1) * l + c1}
+
 function getData() {
 	let newData = new Uint8ClampedArray(p.w*p.h*4), 
 		len = newData.length;
@@ -363,26 +399,30 @@ function getData() {
 	p.autoContrastValue = 1 / (maxDiff + 1);
 	let cval = p.autoContrast ? p.autoContrastValue : p.contrastValue;
 
-	// necessary functions
-	function getLum(x,y) {return x / (1 - y + x)}
-	function getAlp(x,y) {return (1 - y + x) * cval}
-	function setBackdrops(l,c1,c2) {return (c2 - c1) * l + c1}
-
 	// main loop
 	for (let i = 0; i < len; i += 4) {
 		let lums = getLums(i), l1 = lums[0], l2 = lums[1];
 
 		// new luminosities
 		let l = getLum(l1,l2), fl = [l,l,l];
+		let a = getAlp(l1,l2,cval);
 
 		// backdrop colors
-		fl = fl.map((x,i) => setBackdrops(x, p.side[0].color[i]/255, p.side[1].color[i]/255))
+		fl = fl.map((x,i) => setBackdrops(x, p.side[0].color[i]/255, p.side[1].color[i]/255));
 
+		// overlay
+		if (p.doOverlay) {
+			let fa = getOverlayAlp(a, p.densityOverlay);
+			fl = fl.map((x,i) => getOverlayLum(x, a, p.colorOverlay[i]/255, p.densityOverlay, fa));
+			a = fa;
+		}
+
+		// set values
 		fl = fl.map(x => x*255);
 		newData[i]   = fl[0];
 		newData[i+1] = fl[1];
 		newData[i+2] = fl[2];
-		newData[i+3] = getAlp(l1,l2) * 255;
+		newData[i+3] = a * 255;
 	}
 
 	return newData;
@@ -426,6 +466,21 @@ function arrToRgb(arr) {
 
 function hexToRgb(str) {
 	return str.match(/[A-Za-z0-9]{2}/g).map(function(x) {return parseInt(x,16)})
+}
+
+function callMultitask(callback,len,split,incr) {
+	var n = Math.ceil(len / split);
+	var p = len % split || split;
+	for (var i = 0; i < n; i++) {
+		var end = i === n - 1 ? i * split + p - 1 : (i + 1) * split - 1;
+		setTimeout(splitIteration.bind(null, callback, i * split, end, incr), 0)
+	}
+}
+
+function splitIteration(callback,start,end,incr=1) {
+	for (var i = start; i <= end; i += incr) {
+		callback(i)
+	}
 }
 
 </script>
