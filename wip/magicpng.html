@@ -68,12 +68,19 @@
 
 #properties {
 	float: left;
+	width: 300px;
 }
 	
 #output {
-	width: 1200px;
+	width: calc(100vw - 350px);
 	max-width: 100%;
 	float: right;
+}
+
+@media only screen and (max-width: 800px) {
+	#output {
+		width: 100%;
+	}
 }
 
 #output canvas {
@@ -103,6 +110,10 @@
 
 input[type=color]:disabled {
 	background: #dcdcd0;
+}
+
+input[type=number] {
+	width: 5em;
 }
 
 </style>
