@@ -7,8 +7,8 @@
 body {margin: 0;}
 
 polygon {
-	fill: white; 
-	stroke: black; 
+	fill: white;
+	/*stroke: black; */
 	transition: .1s;
 }
 
@@ -32,171 +32,253 @@ polygon {
 
 <script>
 
-function getHexPoints(x,y,l) {
-	var p = l * Math.sqrt(3) / 3,
-		q = l * 2 / Math.sqrt(3);
-	return [[x,y+q],[x+l,y+p],[x+l,y-p],[x,y-q],[x-l,y-p],[x-l,y+p]];
-}
+/*
+TODO:
 
-function getHexPositions(x,y,w,h,l) {
-	var arr = [];
-	for (var i = 0; i < h; i++) {
-		arr[i] = [];
-		for (var j = 0; j < w; j++) {
-			var dx = l * 2 * j,
-				dy = l * 3 / Math.sqrt(3) * i;
-			if (i % 2) dx += l;
-			arr[i][j] = [x+dx,y+dy];
-		}
+custom rotation
+	notes at edge of screen
+fix diplay for phones
+effects on sound
+
+*/
+
+(function() {
+	let step = [2/12,5/12];
+	// let step = [7/12,3/12];
+	// let step = [2/12,1/12];
+	// let step = [1/12,2/12];
+	// let step = [7/12,12/12];
+	// let step = [3/12,1/12];
+	// let step = [3/12,2/12];
+	// let step = [3/12,2/12];
+
+	let mod = Math.sqrt(440/8);
+	let getFrequency = (i,j) => Math.pow(2, (j - Math.floor(i/2)) * step[0] + i * step[1] + mod);
+
+	function noteExtra(note) {
+		let i = note.pos[0], j = note.pos[1];
+		note.step12 = (((j - Math.floor(i/2)) * step[0] + i * step[1]) * 12) % 12;
+		// note.elm.outerHTML += `<text x="0" y="85" text-anchor="middle" fill="red" font-size="30" style="pointer-events:none;user-select:none;">${note.step12}</text>`;
+		let s = note.step12 / 12;
+		// note.fill = `rgb(0,${s*255},${s*255})`;
+		// note.fill = `hsl(${s*360}deg,90%,50%)`;
+		// note.fill = `rgb(0,${Math.abs(Math.sin((s-1/4)*Math.PI))*255},${Math.sin(s*Math.PI)*255})`;
+		// note.fill = `rgb(${Math.sin(s*Math.PI)*255},${Math.abs(Math.sin((s-1/3)*Math.PI))*255},${Math.abs(Math.sin((s-2/3)*Math.PI))*255})`;
+		note.fill = `rgb(0,${(Math.cos(s*2*Math.PI)+1)/2*255},${(Math.sin(s*2*Math.PI)+1)/2*255})`;
+		// note.fill = `rgb(${(Math.cos(s*2*Math.PI)+1)/2*255},${(Math.sin(s*2*Math.PI)+1)/2*255},0)`;
+		// note.fill = `rgb(${(Math.cos(s*2*Math.PI)+1)/2*255},0,${(Math.sin(s*2*Math.PI)+1)/2*255})`;
+		note.elm.style.fill = note.fill;
 	}
-	return arr;
-}
 
-var hexes = [], touches = [];
-var context = new AudioContext()
+	function noteOn(note) {
+		note.elm.style.fill = "white";
+		note.elm.style.transition = "none";
+	}
 
-var mouseDown = false;
-document.body.addEventListener("mousedown", e => mouseDown = true);
-document.body.addEventListener("mouseup", e => mouseDown = false);
+	function noteOff(note) {
+		note.elm.style.fill = note.fill;
+		note.elm.style.transition = "fill ease-out .7s";
+	}
 
-// drawHex(0,0,12,6,50);
-drawHex(0,0,14,10,70);
+	startAll({
+		x: 0, y: 0, w: 12, h: 10, l: 70,
+		// x: 0, y: 0, w: 20, h: 12, l: 40,
+		getFrequency: getFrequency,
+		noteOn: noteOn, noteOff: noteOff,
+		attack: 0.015, decay: 0.03,
+		noteExtra: noteExtra
+	})
 
-function drawHex(x,y,w,h,l) {
-	var svg = document.getElementById('main-svg');
-	var pos = getHexPositions(x,y,w,h,l);
-	pos.forEach((p,i) => {
-		p.forEach((p,j) => {
-			var points = getHexPoints(p[0],p[1],l);
-			var hexPoints = points.join(' ');
-			var hex = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-			hex.setAttribute('points',hexPoints);
-			svg.appendChild(hex);
+})();
 
-			// var stepx = 2/12, stepy = 5/12;
-			var stepx = 7/12, stepy = 3/12;
-			// var stepx = 2/12, stepy = 1/12;
-			// var stepx = 7/12, stepy = 12/12;
-			// var stepx = 3/12, stepy = 1/12;
-			// var stepx = 3/12, stepy = 2/12;
-			// var stepx = 3/12, stepy = 2/12;
+function startAll(p) {
+	let touchedElms = [], playingNotes = [], mouseDown = false, context = new AudioContext();
+	let svg = document.getElementById('main-svg');
+	let noteElms = setElms(p.x,p.y,p.w,p.h,p.l,svg);
+	notes = setNotes(noteElms,p.getFrequency,p.noteExtra);
+	setEventListeners(noteElms,svg,[],p.noteOn,p.noteOff);
 
-			var mod = 6.5;
-			var val = (j - Math.floor(i/2)) * stepx + i * stepy + mod;
+	function getHexPositions(x,y,w,h,l) {
+		let arr = [];
+		for (let i = 0; i < h; i++) {
+			arr[i] = [];
+			for (let j = 0; j < w; j++) {
+				let dx = l * 2 * j,
+					dy = l * 3 / Math.sqrt(3) * i;
+				if (i % 2) dx += l;
+				arr[i][j] = [x+dx,y+dy];
+			}
+		}
+		return arr;
+	}
 
-			var o = context.createOscillator()
-			var g = context.createGain()
-			o.type = "sine"
-			o.connect(g)
-			o.frequency.value = Math.pow(2,val)
-			g.connect(context.destination)
+	function getHexPoints(x,y,l) {
+		let p = l * Math.sqrt(3) / 3,
+			q = l * 2 / Math.sqrt(3);
+		return [[x,y+q],[x+l,y+p],[x+l,y-p],[x,y-q],[x-l,y-p],[x-l,y+p]];
+	}
 
-			if (!hexes[i]) hexes[i] = [];
-			hexes[i].push({
-				hex: hex,
-				o: o,
-				g: g,
-				oStarted: false,
-				playing: false
-			});
-			hex.setAttribute('pos', i + ' ' + j);
+	function setElms(x,y,w,h,l,container) {
+		let pos = getHexPositions(x,y,w,h,l);
+		let elms = [];
+		pos.forEach((p,i) => {
+			p.forEach((p,j) => {
+				let points = getHexPoints(p[0],p[1],l);
+				let hexPoints = points.join(' ');
+				let elm = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+				elm.setAttribute('points',hexPoints);
+				container.appendChild(elm);
 
-			hex.addEventListener("mousedown", e => onDown(i,j));
-			hex.addEventListener("mouseup", e => onUp(i,j));
-			hex.addEventListener("mouseover", e => {if (mouseDown) onDown(i,j)});
-			hex.addEventListener("mouseout", e => onUp(i,j));
-			hex.addEventListener("touchstart", e => {e.preventDefault();});
-			hex.addEventListener("touchend", e => {e.preventDefault();});
-			hex.addEventListener("touchmove", e => {e.preventDefault();});
-			hex.addEventListener("touchcancel", e => {e.preventDefault(); e.stopPropagation();});
+				if (!elms[i]) elms[i] = [];
+				elms[i].push(elm);
+			})
 		})
-	})
 
-	svg.addEventListener("touchstart", e => {
-		for (var i = 0; i < e.touches.length; i++) {
-			var touch = e.touches[i], n = touch.identifier;
-			var elm = document.elementFromPoint(touch.clientX,touch.clientY);
-			if (elm !== null && elm.tagName === "polygon") {
-				var strPos = elm.getAttribute("pos");
-				var pos = strPos.split(" ");
-				onDown(pos[0],pos[1]);
-				touches[n] = strPos;
-			}
-			else 
-				touches[n] = null;
-		}
-	})
-
-	svg.addEventListener("touchend", e => {
-		var touch = e.changedTouches[0], n = touch.identifier;
-		var elm = document.elementFromPoint(touch.clientX,touch.clientY);
-		if (elm !== null && elm.tagName === "polygon") {
-			var otherTouches = touches.slice();
-			otherTouches.splice(n,1);
-			if (touches[n] !== null && !otherTouches.includes(touches[n])) {
-				var pos = touches[n].split(" ");
-				onUp(pos[0],pos[1]);
-			}
-			touches[n] = null;
-		}
-	})
-
-	svg.addEventListener("touchmove", e => {
-		for (var i = 0; i < e.changedTouches.length; i++) {
-			var touch = e.changedTouches[i], n = touch.identifier;
-			var elm = document.elementFromPoint(touch.clientX,touch.clientY);
-			if (elm !== null && elm.tagName === "polygon") {
-				var pos = elm.getAttribute("pos");
-				if (pos !== touches[n]) {
-					var otherTouches = touches.slice();
-					otherTouches.splice(n,1);
-					if (touches[n] !== null && !otherTouches.includes(touches[n])) {
-						var pos1 = touches[n].split(" ");
-						onUp(pos1[0],pos1[1]);
-					}
-					var pos2 = pos.split(" ");
-					onDown(pos2[0],pos2[1]);
-					touches[n] = pos;
-				}
-			} else if (touches[n] !== null) {
-				var pos1 = touches[n].split(" ");
-				onUp(pos1[0],pos1[1]);
-				touches[n] = null;
-			}
-		}
-	})
-
-}
-
-
-function onDown(i,j) {
-	var hex = hexes[i][j];
-
-	hex.hex.style.fill = "green";
-	hex.hex.style.transition = "none";
-	
-	hex.playing = true;
-
-	if (!hex.oStarted){
-		hex.oStarted = true
-   		hex.g.gain.value = 0;
-		hex.o.start()
+		return elms;
 	}
-   	// hex.g.gain.setValueAtTime(0.00001, context.currentTime); 
-	// hex.g.gain.exponentialRampToValueAtTime(1, context.currentTime + 0.01);
-	hex.g.gain.setTargetAtTime(0.25, context.currentTime, 0.015);
-}
 
-function onUp(i,j) {
-	var hex = hexes[i][j];
-	hex.hex.style.fill = "white";
-	hex.hex.style.transition = "fill ease-out .7s";
-	// manageFill(i,j);
-	hex.playing = false;
+	function setNotes(noteElms,getFrequency,noteExtra) {
+		let notes = [];
+		noteElms.forEach((elm,i) => {
+			elm.forEach((elm,j) => {
 
-    // hex.g.gain.setValueAtTime(hexes[i][j].g.gain.value, context.currentTime); 
-	// hex.g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.04)
-	hex.g.gain.setTargetAtTime(0, context.currentTime, 0.015);
+				let frequency = getFrequency(i,j);
+				let o = context.createOscillator();
+				let g = context.createGain();
+				o.type = "sine";
+				o.connect(g);
+				o.frequency.value = frequency;
+				g.connect(context.destination);
+
+				if (!notes[i]) notes[i] = [];
+				notes[i].push({
+					elm: elm,
+					o: o,
+					g: g,
+					frequency: frequency,
+					pos: [i,j],
+					oStarted: false
+				});
+				elm.setAttribute('pos',`${i},${j}`);
+
+				noteExtra(notes[i][j]);
+			})
+		})
+
+		return notes;
+	}
+
+	function getNoteOn(funcExtra) {
+		return function(elm) {
+			// console.log("ONNN")
+			let n = elm.getAttribute('pos').split(",");
+			let note = notes[n[0]][n[1]];
+			
+			if (!note.oStarted){
+				note.oStarted = true
+		   		note.g.gain.value = 0;
+				note.o.start()
+			}
+
+			playingNotes.push(note);
+			let l = playingNotes.length;
+			let vol = l > 5 ? 1/l : 0.2;
+			for (let i = 0; i < l; i++) {
+				let x = playingNotes[i];
+				x.g.gain.setTargetAtTime(vol, context.currentTime, p.attack);
+			}
+
+			funcExtra(note);
+		}
+	}
+
+	function getNoteOff(funcExtra) {
+		return function(elm) {
+			// console.log("OFFF")
+			let n = elm.getAttribute('pos').split(",");
+			let note = notes[n[0]][n[1]];
+
+			while (playingNotes.indexOf(note) != -1) {
+				playingNotes.splice(playingNotes.indexOf(note),1);
+			}
+
+			note.g.gain.setTargetAtTime(0, context.currentTime, p.decay);
+
+			funcExtra(note);
+		}
+	}
+
+	function setEventListeners(noteElms,container,keys,onExtra,offExtra) {
+
+		let elms = [].concat(...noteElms);
+		let funcOn = getNoteOn(onExtra);
+		let funcOff = getNoteOff(offExtra);
+
+		if (keys) {
+			document.addEventListener("keydown", e => {
+				if (keys.includes(e.key))
+					funcOn(elms[keys.indexOf(e.key)]);
+			})
+
+			document.addEventListener("keyup", e => {
+				if (keys.includes(e.key))
+					funcOff(elms[keys.indexOf(e.key)]);
+			})
+		}
+
+		document.body.addEventListener("mousedown", e => mouseDown = true);
+		document.body.addEventListener("mouseup", e => mouseDown = false);
+
+		elms.forEach(elm => {
+			elm.addEventListener("mousedown", e => {e.preventDefault(); funcOn(elm)});
+			elm.addEventListener("mouseup", e => {e.preventDefault(); funcOff(elm)});
+			elm.addEventListener("mouseover", e => {e.preventDefault(); if (mouseDown) funcOn(elm)});
+			elm.addEventListener("mouseout", e => {e.preventDefault(); if (mouseDown) funcOff(elm)});
+		})
+
+		container.addEventListener("touchstart", e => {
+			e.preventDefault(); e.stopPropagation();
+			for (let i = 0; i < e.touches.length; i++) {
+				let touch = e.touches[i], n = touch.identifier, elm = document.elementFromPoint(touch.clientX,touch.clientY);
+				if (elm && elms.includes(elm) && !touchedElms.includes(elm)) {
+					funcOn(elm);
+					touchedElms[n] = elm;
+				}
+			}
+		})
+
+		container.addEventListener("touchend", e => {
+			e.preventDefault(); e.stopPropagation();
+			let touch = e.changedTouches[0], n = touch.identifier, prev = touchedElms[n], elm = document.elementFromPoint(touch.clientX,touch.clientY);
+			if (elm && elms.includes(elm)) {
+				touchedElms[n] = null;
+				if (prev && !touchedElms.includes(prev))
+					funcOff(prev);
+			}
+		})
+
+		container.addEventListener("touchmove", e => {
+			e.preventDefault(); e.stopPropagation();
+			for (let i = 0; i < e.changedTouches.length; i++) {
+				let touch = e.changedTouches[i], n = touch.identifier, prev = touchedElms[n], elm = document.elementFromPoint(touch.clientX,touch.clientY);
+				if (elm && elms.includes(elm) && elm !== prev) {
+					touchedElms[n] = null;
+					if (prev && !touchedElms.includes(prev))
+						funcOff(prev);
+					if (!touchedElms.includes(elm)) {
+						funcOn(elm);
+						touchedElms[n] = elm;
+					}
+				} else if (prev && elm !== prev) {
+					funcOff(prev);
+					touchedElms[n] = null;
+				}
+			}
+		})
+
+		container.addEventListener("touchcancel", e => {e.preventDefault(); e.stopPropagation();});
+	}
+
 }
 
 </script>
