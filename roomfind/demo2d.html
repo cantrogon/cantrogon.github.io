@@ -1,0 +1,452 @@
+<div id="main">
+	<div class="svg-wrap">
+		<div class="svg-scroll">
+			<svg id="svg-main"></svg>
+		</div>
+	</div>
+	<div class="puts">
+		<div class="input-wrap">
+			<input id="input" placeholder="find" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+			<div class="input-line"></div>
+		</div>
+		<div id="labels"></div>
+	</div>
+</div>
+
+
+<style type="text/css">
+	
+body {
+	background: #FFFFF8;
+}
+
+#main {
+	display: flex;
+	width: 100%;
+	padding: 50px;
+	box-sizing: border-box;
+	position: relative;
+}
+
+.puts {
+	margin-left: 40px;
+	font-size: 48px;
+	font-family: 'Times New Roman';
+}
+
+#input {
+	background: transparent;
+	border: none;
+	font-size: 48px;
+	font-family: 'Times New Roman';
+	transition: color .1s;
+	width: 100%;
+}
+
+/*#input:-ms-input-placeholder,*/
+/*#input::-webkit-input-placeholder,*/
+#input::placeholder {
+	font-style: italic;
+}
+
+#input:focus {
+	outline: none;
+}
+
+#input:not(:focus) {
+	color: grey;
+}
+
+.input-line {
+	transition: .4s;
+	height: 2px;
+	width: 25%;
+	background: #eeede3;
+	border-radius: 10px;
+}
+
+#input:focus + .input-line {
+	background: #bfb28b;
+	width: 100%;
+}
+
+#labels {
+	position: relative;
+	margin-top: 20px;
+}
+
+.label-wrap {
+	opacity: 0;
+	transform: translateY(-20px);
+	transition: .3s;
+	position: absolute;
+	top: 0;
+}
+
+.label1 {
+	margin-bottom: 10px;
+}
+
+.label1::after {
+	content: '';
+	display: block;
+	height: 3px;
+	width: 150px;
+	background: maroon;
+	border-radius: 10px;
+	margin-top: 10px;
+}
+
+.label2 {
+	font-size: 40px;
+	color: grey;
+	font-style: italic;
+}
+
+#svg-main {
+	position: relative;
+	stroke-linejoin: round;
+	min-width: 700px;
+  	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+}
+
+.svg-wrap {
+	overflow: hidden;
+	position: relative;
+	min-width: 700px;
+	border: 10px solid #eeede3;
+	border-radius: 50px;
+}
+
+.svg-scroll {
+	overflow: auto;
+	position: relative;
+	width: 100%;
+}
+
+.p {
+	fill: transparent;
+	stroke: transparent;
+	transition: .2s, transform .05s;
+	cursor: pointer;
+}
+
+.p:active {
+	transform: translateY(5px);
+}
+
+.svg-scroll::-webkit-scrollbar {
+	height: 8px;
+}
+
+.svg-scroll::-webkit-scrollbar-track {
+	background: #eeede3;
+	border-radius: 10px;
+}
+
+.svg-scroll::-webkit-scrollbar-thumb {
+	background: #bfb28b;
+	border-radius: 10px;
+}
+
+@media only screen and (max-width: 1100px) {
+	#main {
+		flex-flow: column;
+		padding: 40px;
+	}
+
+	.svg-wrap {
+		min-width: 0;
+		border-bottom-right-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+
+	#svg-main {
+		min-width: 1200px;
+	}
+
+	.puts {
+		margin-left: 0;
+		margin-top: 20px;
+	}
+}
+
+@media only screen and (max-width: 768px) {
+	#main {
+		padding: 20px;
+	}
+
+	.puts, #input {
+		font-size: 40px;
+	}
+
+	.label2 {
+		font-size: 32px;
+	}
+
+}
+
+</style>
+
+
+<script type="text/javascript">
+	
+
+(function() {
+
+window.onload = loadHandler;
+function loadHandler() {
+	let imgw = 1592, imgh = 894;
+	let hoverFillColor = '#ffe600', hoverStrokeColor = 'black', hoverStrokeWidth = 14;
+	let highlightFillColor = '#fffbcf', highlightStrokeColor = 'black', highlightStrokeWidth = 8;
+	let imgUrl = 'images/fullStreet.png';
+
+	let rooms = getRooms();
+
+	let svg = document.getElementById('svg-main');
+	svg.setAttribute('viewBox',`0 0 ${imgw} ${imgh}`);
+	svg.style.strokeWidth = highlightStrokeWidth + 'px';
+
+	let svgimg = document.createElementNS('http://www.w3.org/2000/svg','image');
+	svgimg.setAttributeNS(null,'height',imgh);
+	svgimg.setAttributeNS(null,'width',imgw);
+	svgimg.setAttributeNS('http://www.w3.org/1999/xlink','href', imgUrl);
+	svgimg.setAttributeNS(null,'x','0');
+	svgimg.setAttributeNS(null,'y','0');
+	svgimg.setAttributeNS(null, 'visibility', 'visible');
+	svg.prepend(svgimg);
+
+	let foundRoom = null;
+
+	for (let room of rooms) {
+		let elm = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+		room.elm = elm;
+		elm.classList = 'p';
+		elm.setAttribute('points',room.points);
+
+		svg.append(elm);
+
+		let wrap = document.createElement('div');
+		wrap.classList = 'label-wrap';
+		let labels = document.getElementById('labels');
+		labels.append(wrap);
+
+		let o1 = document.createElement('div');
+		o1.classList = 'label1';
+		o1.innerHTML = room.name;
+		if (room.name === 'empty') o1.style.color = 'dimgrey';
+		wrap.append(o1);
+
+		let o2 = document.createElement('div');
+		o2.classList = 'label2';
+		o2.innerHTML = room.subname;
+		wrap.append(o2);
+
+		room.label = wrap;
+
+		room.hovered = false;
+		room.highlighted = false;
+		room.labelled = false;
+		room.found = false;
+		room.highlight = function() {
+			this.highlighted = true;
+			this.elm.style.fill = highlightFillColor;
+			this.elm.style.stroke = highlightStrokeColor;
+			this.elm.style.strokeWidth = highlightStrokeWidth;
+		};
+		room.hover = function() {
+			this.hovered = true;
+			this.elm.style.fill = hoverFillColor;
+			this.elm.style.stroke = hoverStrokeColor;
+			this.elm.style.strokeWidth = hoverStrokeWidth;
+		};
+		room.clear = function() {
+			this.highlighted = false;
+			this.hovered = false;
+			this.elm.style.fill = 'transparent';
+			this.elm.style.stroke = 'transparent';
+			this.elm.style.strokeWidth = highlightStrokeWidth;
+		};
+		room.labelOut = function() {
+			this.labelled = false;
+			setTimeout(() => {
+				this.label.style.opacity = 0;
+				this.label.style.transform = 'translateY(20px)';
+			},0)
+		}
+		room.labelIn = function() {
+			this.labelled = true;
+			this.label.style.transition = 'none';
+			this.label.style.transform = 'translateY(-20px)';
+			setTimeout(() => {
+				this.label.style.transition = '.3s';
+				this.label.style.opacity = 1;
+				this.label.style.transform = 'none';
+			},0)
+		}
+
+		function mouseEnterHandler(e) {
+			elm.remove();
+			svg.append(elm);
+			room.hover();
+			if (foundRoom) {
+				if (!room.found) room.labelIn();
+				if (!room.found && foundRoom.labelled) foundRoom.labelOut();
+			} else {
+				room.labelIn();
+			}
+		}
+
+		function mouseOutHandler(e) {
+			room.hovered = false;
+			if (room.highlighted) {
+				room.highlight();
+			} else {
+				room.clear();
+			}
+			if (foundRoom) {
+				if (!room.found) room.labelOut();
+				if (!foundRoom.labelled) foundRoom.labelIn();
+			} else {
+				room.labelOut();
+			}
+		}
+
+		elm.addEventListener('mouseenter', mouseEnterHandler);
+		elm.addEventListener('mouseout', mouseOutHandler);
+
+	}
+
+	let input = document.getElementById('input');
+	input.addEventListener('input', e => {
+		let val = input.value;
+		let re = RegExp('.*?' + val + '.*?', 'i');
+		let onlyRoom, hovering = false;
+		for (let room of rooms) {
+			if (room.hovered) hovering = true;
+			if (val != '' && re.test(room.name)) {
+				if (!room.hovered && !room.highlighted) room.highlight();
+				room.highlighted = true;
+				onlyRoom = onlyRoom === undefined ? room : null;
+			} else if (!room.hovered) {
+				room.clear();
+			}
+		}
+
+		if (onlyRoom && (!foundRoom || !onlyRoom.found)) {
+			if (foundRoom && !onlyRoom.found) {
+				foundRoom.labelOut();
+				foundRoom.found = false;
+			}
+			foundRoom = onlyRoom;
+			foundRoom.found = true;
+			if (!foundRoom.labelled && !hovering) {
+				foundRoom.labelIn();
+			} 
+		} else if (!onlyRoom && foundRoom) {
+			foundRoom.labelOut();
+			foundRoom.found = false;
+			foundRoom = null;
+		}
+	})
+}
+
+function updatelabelsDiv(elm) {
+	let l = elm.offsetHeight;
+	let div = document.getElementById('labels');
+	if (div.style.height < l) {
+		div.style.height = l + 'px';
+	}
+}
+
+
+
+
+
+
+function getRooms() {
+	return [
+		{name: "303-G01",
+		 subname:"Mathematics",
+		 points: "219,546,219,514,299,473,365,517,285,559,285,587"},
+		{name: "303-G02",
+		 subname:"Mathematics",
+		 points: "365,518,431,561,354,606,354,634,286,587,286,561"},
+		{name: "303-G03",
+		 subname:"Mathematics",
+		 points: "354,606,434,562,562,647,483,686,483,717,352,635"},
+		{name: "303-G04",
+		 subname:"Mathematics",
+		 points: "483,689,482,717,595,792,598,762,674,719,562,644"},
+		{name:"empty",
+		 subname:"Mathematics",
+		 points:"756,679,380,427,297,471,676,723"},
+		{name:"303-G13",
+		 subname:"Science",
+		 points:"757,679,826,640,754,591,683,633"},
+		{name:"303-G14",
+		 subname:"Mathematics",
+		 points:"685,632,753,591,701,557,632,597"},
+		{name:"303-G15",
+		 subname:"Mathematics",
+		 points:"635,597,583,565,655,528,701,558"},
+		{name:"303-G16",
+		 subname:"Mathematics",
+		 points:"656,528,584,479,511,518,583,568"},
+		{name:"303-G20",
+		 subname:"Mathematics",
+		 points:"514,516,380,426,486,373,617,462,619,490,607,498,584,481"},
+		{name:"303-G23",
+		 subname:"Mathematics",
+		 points:"617,464,618,490,719,435,719,407,587,315,483,373"},
+	    
+	    {name:"303S-G75, 303S-B75, 303S-175, 303S-175, 303S-279",
+		 subname:"Statistics and Computer Science",
+		 points:"597,794,598,764,828,639,870,697,873,723,610,803"},
+	    {name:"303S-G87",
+		 subname:"Statistics and Computer Science",
+		 points:"873,728,873,698,850,671,921,650,942,677,944,708"},
+	    {name:"empty",
+		 subname:"Statistics and Computer Science",
+		 points:"921,651,882,600,801,623,829,640,850,670"},
+	    {name:"303S-G91, 303S-B91, 303S-191",
+		 subname:"Statistics and Computer Science",
+		 points:"944,709,942,677,884,601,1030,559,1090,636,1092,665"},
+
+		{name:"302-G20",
+		 subname:"Science",
+		 points:"1022,523,1019,551,1083,596,1085,564,1195,503,1131,460"},
+		{name:"302-G40",
+		 subname:"Science",
+		 points:"1079,593,1166,648,1307,603,1306,577,1195,502,1085,563"},
+		{name:"Student Plaza",
+		 subname:"Science",
+		 points:"1020,551,1002,541,944,555,905,531,906,503,1248,315,1538,507,1541,536,1310,604,1308,575,1131,460,1022,523"},
+
+		{name:"Student Resource Centre",
+		 subname:"Science",
+		 points:"778,570,683,505,681,475,830,397,925,459,927,487"},
+		{name:"Student Advice Centre",
+		 subname:"Science",
+		 points:"829,397,927,342,1023,408,1023,436,925,487,926,459"},
+	    {name:"empty",
+		 subname:"Science",
+		 points:"1025,437,1024,408,929,345,916,350,889,362,890,333,989,279,972,266,1061,202,1217,305,1219,333"},
+	    {name:"301-G050",
+		 subname:"Science",
+		 points:"889,361,890,333,989,278,897,218,798,273,797,302"},
+	    {name:"301-G053",
+		 subname:"Science",
+		 points:"972,266,1061,201,1023,176,897,217"},
+
+	    {name:"Recreation Centre",
+		 subname:"Other",
+		 points:"743,297,955,184,955,153,820,65,608,180,608,213"},
+	]
+}
+ 
+})();
+
+
+</script>
