@@ -1,3 +1,3 @@
-# cantrogon.github.io
+# cantrogon
 
 Just another repoistory.
