@@ -7,7 +7,7 @@
 	</select><br/>
 	Width: <input id="w" type="number" min="1" max="32767" value="600" required disabled><br/>
 	Height: <input id="h" type="number" min="1" max="32767" value="600" required disabled><br/>
-	Automatic Contrast: <input id="autoContrast" type="checkbox" checked>
+	Automatic Contrast: <input id="doAutoContrast" type="checkbox" checked>
 	<span id="autoContrastValue">0.00</span><br/>
 	Contrast Value: <input id="contrastValue" type="number" min="0" value="0.5" step="any" required disabled><br/>
 	<input id="reverseBackdrops" type="button" value="Reverse Backdrops"><br/>
@@ -17,7 +17,7 @@
 	File: <input id="img1" type="file" accept="image/*" required><br/>
 	Fit: <select id="fit1">
 		<option selected>Contain</option>
-		<option>Fill</option>
+		<option>Cover</option>
 		<option>Stretch</option>
 	</select><br/>
 	Grayscale: <select id="grayscale1">
@@ -37,7 +37,7 @@
 	File: <input id="img2" type="file" accept="image/*" required><br/>
 	Fit: <select id="fit2">
 		<option selected>Contain</option>
-		<option>Fill</option>
+		<option>Cover</option>
 		<option>Stretch</option>
 	</select><br/>
 	Grayscale: <select id="grayscale2">
@@ -54,11 +54,11 @@
 	<br/>
 	Overlay: <br/>
 	Do Overlay: <input id="doOverlay" type="checkbox"><br/>
-	Color: <input id="colorOverlay" type="color" value="#ff0000" disabled><br/>
-	Density: <input id="densityOverlay" type="number" min="0" value="0.5" step="any" required disabled><br/>
+	Color: <input id="overlayColor" type="color" value="#ff0000" disabled><br/>
+	Density: <input id="overlayDensity" type="number" min="0" value="0.5" step="any" required disabled><br/>
 	<br/>
-	<input id="submit" type="submit">
-	<input id="reset" type="reset">
+	<input id="submit" type="submit" value="Submit">
+	<input id="reset" type="reset" value="Reset">
 	<br/><br/><a id="download" href="#" download>download</a>
 	<br/><br/><div id="loading"></div>
 </form>
@@ -118,9 +118,157 @@ input[type=number] {
 
 </style>
 
+
+<script src="https://twgljs.org/dist/4.x/twgl-full.min.js"></script>
+
+<script src="../js/webglmax.js"></script>
+
+<script id="this-vs" type="x-shader/x-vertex">
+attribute vec2 a_position;
+attribute vec2 a_texCoord;
+
+uniform vec2 u_resolution;
+
+varying vec2 v_texCoord;
+
+void main() {
+   vec2 clipSpace = a_position / u_resolution * 2.0 - 1.0;
+   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+
+   v_texCoord = a_texCoord;
+}
+</script>
+
+<script id="this-fs" type="x-shader/x-fragment">
+precision mediump float;
+
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
+
+uniform bool u_invert1;
+uniform bool u_invert2;
+uniform int u_gray1;
+uniform int u_gray2;
+uniform bool u_doAutoContrast;
+uniform float u_contrastValue;
+uniform float u_autoContrastValue;
+uniform vec3 u_bCol1;
+uniform vec3 u_bCol2;
+uniform bool u_doOverlay;
+uniform float u_oDensity;
+uniform vec3 u_oColor;
+
+varying vec2 v_texCoord;
+
+float grayscale(vec4, int);
+
+void main() {
+	// contrast value
+	float conVal = u_autoContrastValue;
+	if (!u_doAutoContrast) conVal = u_contrastValue;
+
+	// get colors
+	vec4 color1 = texture2D(u_texture1, v_texCoord);
+	vec4 color2 = texture2D(u_texture2, v_texCoord);
+	
+	// grayscale
+	float l1 = grayscale(color1, u_gray1);
+	float l2 = grayscale(color2, u_gray2);
+
+	// invert
+	if (u_invert1) l1 = 1.0 - l1;
+	if (u_invert2) l2 = 1.0 - l2;
+
+	// core calculation
+	float l;
+	if (1.0 - l2 + l1 == 0.0) l = 0.0;
+	else l = l1 / (1.0 - l2 + l1);
+	float a = (1.0 - l2 + l1) * conVal;
+
+	// backdrop colors
+	vec3 fl = (u_bCol2 - u_bCol1) * l + u_bCol1;
+
+	// overlay
+	if (u_doOverlay) {
+		float oAlpha = u_oDensity + a * (1.0 - u_oDensity);
+		if (oAlpha == 0.0) fl = vec3(0);
+		else fl = (u_oColor * u_oDensity + fl * a * (1.0 - u_oDensity)) / oAlpha;
+		a = oAlpha;
+	}
+
+	gl_FragColor = vec4(fl,a);
+}
+
+</script>
+
+<script id="diff-fs" type="x-shader/x-fragment">
+precision mediump float;
+
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
+
+uniform bool u_invert1;
+uniform bool u_invert2;
+uniform int u_gray1;
+uniform int u_gray2;
+
+varying vec2 v_texCoord;
+
+float grayscale(vec4, int);
+
+void main() {
+	// get colors
+	vec4 color1 = texture2D(u_texture1, v_texCoord);
+	vec4 color2 = texture2D(u_texture2, v_texCoord);
+
+	// grayscale
+	float l1 = grayscale(color1, u_gray1);
+	float l2 = grayscale(color2, u_gray2);
+
+	// invert
+	if (u_invert1) l1 = 1.0 - l1;
+	if (u_invert2) l2 = 1.0 - l2;
+
+	// diff
+	float fl = l1 - l2;
+
+	gl_FragColor = vec4(fl,fl,fl,1.0);
+}
+
+</script>
+
+<script id="grayscale" type="notjs">
+float grayscale(vec4 color, int type) {
+	float r = color.r;
+	float g = color.g;
+	float b = color.b;
+	if (type == 0) 		return ( r + g + b ) / 3.0;
+	else if (type == 2) return ( max( r, max( g, b ) ) + min( r, min( g, b ) ) ) / 2.0;
+	else if (type == 3) return r;
+	else if (type == 4) return g;
+	else if (type == 5) return b;
+	else if (type == 6) return min( r, min( g, b ) );
+	else if (type == 7) return max( r, max( g, b ) );
+	else 				return r * 0.2126 + g * 0.7152 + b * 0.0722;
+}
+</script>
+
 <script type="text/javascript">
 
-let p = {side: [{},{}]}, data = [], c, ins = {}, insImgs, changedImgs = [], downloadOn, calcRunnning;
+let p = {autoContrastValue: 0, overlayColor: [0,0,0]}, imgs = {changed: [true, true], imgs: []}, canv, calcRunnning;
+
+function Canvas(w,h,elm=null) {
+	let canvas = document.createElement('canvas');
+	canvas.width = w;
+	canvas.height = h;
+	if (elm)
+		elm.appendChild(canvas)
+	
+	return canvas;
+}
+
+
+// LOAD AND INPUT CONTROL
 
 window.addEventListener('load',function() {
 	loadHandler();
@@ -128,42 +276,62 @@ window.addEventListener('load',function() {
 
 function loadHandler() {
 	setCanvases();
-	setForm();
-	updateProperties();
+	let ins = getInputs();
+	setForm(ins);
+	ins.updateProperties();
 	updateCanvasBackdrops();
-}
-
-function Canvas(w,h,elm=null) {
-	let canvas = document.createElement('canvas'),
-		ctx = canvas.getContext('2d');
-	canvas.width = w;
-	canvas.height = h;
-	if (elm)
-		elm.appendChild(canvas)
-	
-	this.canvas = canvas;
-	this.ctx = ctx;
 }
 
 function setCanvases() {
 	let output = document.getElementById('output');
-	c = [new Canvas(1,1,output), new Canvas(1,1,output)]
+	canv = [new Canvas(1,1,output), new Canvas(1,1,output)]
 }
 
 function updateCanvasBackdrops() {
-	for (let i = c.length - 1; i >= 0; i--) {
-		c[i].canvas.style.background = arrToRgb(p.side[i].color);
+	for (let i = canv.length - 1; i >= 0; i--) {
+		canv[i].style.background = arrToRgb(p.color[i]);
 	}
 }
 
-function setForm() {
+function getInputs() {
+
+	let ins = {};
+
 	let inputs = [
 		...document.querySelectorAll('input:not([type=file]):not([type=button]):not([type=submit]):not([type=reset])'),
 		...document.getElementsByTagName('select')
 	]
 
+	function getGetValue(x) {
+		switch (x.type) {
+			case "checkbox":
+				return function() { return this.elm.checked };
+			case "select":
+				return function() { return this.elm.selectedIndex };
+			case "number":
+				return function() { return parseInt(this.elm.value) };
+			case "numberf":
+				return function() { return parseFloat(this.elm.value) };
+			case "color":
+				return function() { return hexToRgb(this.elm.value) };
+			default:
+				return function() { return this.elm.value };
+		}
+	}
+
+	function getSetProp(x) {
+		if (x.n === null)
+			return function() { p[this.id] = this.getValue(); }
+		else
+			return function() { 
+				if (!p[this.id]) p[this.id] = [];
+				p[this.id][this.n] = this.getValue();
+			}
+	}
+
 	inputs.forEach(elm => {
 		ins[elm.id] = {
+			isProp: true,
 			elm: elm,
 			type: elm.tagName === "INPUT" ? elm.step !== "any" ? elm.type : "numberf" : "select",
 			id: elm.id.match(/\D+/)[0],
@@ -173,41 +341,34 @@ function setForm() {
 			},
 			enable: function() {
 				this.elm.disabled = false;	
-			},
-			getValue: function() {
-				switch (this.type) {
-					case "checkbox":
-						return this.elm.checked;
-					case "select":
-						return this.elm.selectedIndex;
-					case "number":
-						return parseInt(this.elm.value);
-					case "numberf":
-						return parseFloat(this.elm.value)
-					case "color":
-						return hexToRgb(this.elm.value);
-					default:
-						return this.elm.value;
-				}
-			},
-			setProp: function() {
-				let v = this.getValue();
-				if (this.n === null)
-					p[this.id] = v;
-				else
-					p.side[this.n][this.id] = v;
 			}
 		}
+		ins[elm.id].getValue = getGetValue(ins[elm.id]);
+		ins[elm.id].setProp = getSetProp(ins[elm.id]);
 	})
 
-	insImgs = document.querySelectorAll('input[type=file]');
+	ins.updateProperties = function() {
+		for (let prop of Object.values(this)) {
+			if (prop.isProp && !prop.elm.disabled) {
+				prop.setProp();
+			}
+		}
+	}
+
+	return ins;
+}
+
+function setForm(ins) {
+
+	// image files
+	ins.imgIns = document.querySelectorAll('input[type=file]');
 	for (let i = 1; i >= 0; i--) {
-		insImgs[i].num = i;
-		insImgs[i].addEventListener('change', function(){
-			if (this.value !== "") changedImgs[this.num] = true;
+		ins.imgIns[i].addEventListener('change', function(){
+			if (this.value !== "") imgs.changed[i] = true;
 		});
 	}
 
+	// reverse backdrop
 	document.getElementById('reverseBackdrops').addEventListener('click', function(e) {
 		e.preventDefault();
 		let temp = ins.color1.elm.value;
@@ -215,13 +376,15 @@ function setForm() {
 		ins.color2.elm.value = temp;
 	})
 
-	ins.autoContrast.elm.addEventListener('change', function() {
+	// autoContrast
+	ins.doAutoContrast.elm.addEventListener('change', function() {
 		if (this.checked)
 			ins.contrastValue.disable();
 		else
 			ins.contrastValue.enable();
 	})
 
+	// dimensions
 	ins.dimensions.elm.addEventListener('change', function() {
 		if (this.selectedIndex === 2) {
 			ins.w.enable();
@@ -232,53 +395,45 @@ function setForm() {
 		}
 	})
 
+	// overlay
 	ins.doOverlay.elm.addEventListener('change', function() {
 		if (this.checked) {
-			ins.colorOverlay.enable();
-			ins.densityOverlay.enable();
+			ins.overlayColor.enable();
+			ins.overlayDensity.enable();
 		} else {
-			ins.colorOverlay.disable();
-			ins.densityOverlay.disable();
+			ins.overlayColor.disable();
+			ins.overlayDensity.disable();
 		}
 	})
 
+	// reset
+	let defaultDisabled = ['contrastValue','w','h','overlayColor','overlayDensity'];
 	document.getElementById('reset').addEventListener('click', e => {
-		setFormDisabled();
+		for (let i = defaultDisabled.length - 1; i >= 0; i--) {
+			ins[defaultDisabled[i]].disable();
+		}
+		if (!calcRunnning) loadingEnd(true);
 	})
 
+	// submit
 	document.getElementById('properties').addEventListener('submit', e => {
 		e.preventDefault();
-		if (!calcRunnning) sumbitHandler();
+		if (!calcRunnning) submitHandler(ins);
 	})
-}
-
-function setFormDisabled() {
-	ins.contrastValue.disable();
-	ins.w.disable();
-	ins.h.disable();
-	ins.colorOverlay.disable();
-	ins.densityOverlay.disable();
 }
 
 function updateDimensions() {
 	let n = p.dimensions;
 
 	if (n !== 2) {
-		p.w = p.side[n].img.width;
-		p.h = p.side[n].img.height;
+		p.w = imgs.imgs[n].width;
+		p.h = imgs.imgs[n].height;
 	}
 
 	for (let i = 1; i >= 0; i--) {
-		c[i].canvas.width = p.w;
-		c[i].canvas.height = p.h;
+		canv[i].width = p.w;
+		canv[i].height = p.h;
 	}
-}
-
-function updateProperties() {
-	Object.keys(ins).forEach(k => {
-		if (!ins[k].elm.disabled)
-			ins[k].setProp();
-	})
 }
 
 function loadingStart() {
@@ -287,16 +442,15 @@ function loadingStart() {
 	calcRunnning = true;
 }
 
-function loadingEnd() {
-	console.log("END")
+function loadingEnd(reset=false) {
 	document.getElementById('loading').style.display = "none";
-	document.getElementById('autoContrastValue').innerText = p.autoContrastValue.toFixed(2);
-	if (!downloadOn) {
+	if (!reset) {
+		document.getElementById('autoContrastValue').innerText = p.autoContrastValue.toFixed(2);
 		document.getElementById('download').style.visibility = "visible";
-		downloadOn = true;
+		document.getElementById('download').href = canv[0].toDataURL();
 	}
-	document.getElementById('download').href = c[0].canvas.toDataURL();
 	calcRunnning = false;
+	console.log("END")
 }
 
 function loadImage(url,callback) {
@@ -306,20 +460,21 @@ function loadImage(url,callback) {
 	return image;
 }
 
-function sumbitHandler() {
+function submitHandler(ins) {
 	loadingStart();
 
-	let num = changedImgs.filter(x => x).length;
+	let num = imgs.changed.filter(Boolean).length;
 	if (num) {
-		changedImgs.forEach((x,i) => {
-			if (x)
-				loadImage(URL.createObjectURL(insImgs[i].files[0]), function() {
-					p.side[i].img = this;
+		imgs.changed.forEach((changed,i) => {
+			if (changed) {
+				loadImage(URL.createObjectURL(ins.imgIns[i].files[0]), function() {
+					imgs.imgs[i] = this;
 					URL.revokeObjectURL(this.src);
 					onImageLoad();
 				});
+			}
 		});
-		changedImgs = [];
+		imgs.changed = [];
 	} else {
 		proceed();
 	}
@@ -331,118 +486,35 @@ function sumbitHandler() {
 
 	function proceed() {
 		setTimeout(function() {
-			updateProperties();
+			ins.updateProperties();
 			updateDimensions();
 			updateCanvasBackdrops();
-			setImgData();
-			drawData();
+			resultData();
 			loadingEnd();
 		},0)
 	}
 }
 
-function setImgData() {
-	for (let i = 1; i >= 0; i--) {
-		data[i] = imgData(i,p.side[i].img,p.side[i].fit,p.side[i].invert);
+
+// PROCESSING IMAGE
+
+function resultData() {
+	let canvases = [];
+	for (let i = 0; i < 2; i++) {
+		canvases.push(getImgCanvas(i,imgs.imgs[i],p.fit[i],p.invert[i]));
+	}
+
+	const canvas = doShader(canvases[0],canvases[1])
+	for (let i = 0; i < 2; i++) {
+		const ctx = canv[i].getContext('2d');
+		ctx.drawImage(canvas, 0, 0);
 	}
 }
 
-function drawData() {
-	let imgData = c[0].ctx.createImageData(p.w,p.h);
-	imgData.data.set(getData());
-	c[0].ctx.putImageData(imgData,0,0)
-	c[1].ctx.putImageData(imgData,0,0)
-}
-
-function getGrayscale(type,r,g,b) {
-	switch (type) {
-		case 0:
-			return (r + g + b) / 3;
-		case 1:
-			return r * 0.2126 + g * 0.7152 + b * 0.0722;
-		case 2:
-			return (Math.max(r,g,b) + Math.min(r,g,b)) / 2;
-		case 3:
-			return r;
-		case 4:
-			return g;
-		case 5:
-			return b;
-		case 6:
-			return Math.min(r,g,b);
-		case 7:
-			return Math.max(r,g,b);
-	}
-}
-
-function getLums(i) {
-	// get initial luminosities
-	let lum = [];
-	for (let j = 0; j < 2; j++) {
-		let raw = [data[j][i],data[j][i+1],data[j][i+2]].map(x => x / 255);
-		lum[j] = getGrayscale(p.side[j].grayscale,...raw);
-		if (p.side[j].invert)
-			lum[j] = 1 - lum[j];
-	}
-	return lum;
-}
-
-// necessary functions
-function getLum(x,y) {return x / (1 - y + x)}
-function getAlp(x,y,c=0.5) {return (1 - y + x) * c}
-function getOverlayLum(l,a,cl,ca,fa) {
-	if (a === 0) return cl;
-	return (cl * ca + l * a * (1 - ca)) / fa
-}
-function getOverlayAlp(a,ca) {return ca + a * (1 - ca)}
-function setBackdrops(l,c1,c2) {return (c2 - c1) * l + c1}
-
-function getData() {
-	let newData = new Uint8ClampedArray(p.w*p.h*4), 
-		len = newData.length;
-
-	// get value for auto contrast
-	let maxDiff = 0;
-	for (let i = 0; i < len; i += 4) {
-		let l = getLums(i), l1 = l[0], l2 = l[1];
-		if (l1 - l2 > maxDiff) maxDiff = l1 - l2;
-	}
-	p.autoContrastValue = 1 / (maxDiff + 1);
-	let cval = p.autoContrast ? p.autoContrastValue : p.contrastValue;
-
-	// main loop
-	for (let i = 0; i < len; i += 4) {
-		let lums = getLums(i), l1 = lums[0], l2 = lums[1];
-
-		// new luminosities
-		let l = getLum(l1,l2), fl = [l,l,l];
-		let a = getAlp(l1,l2,cval);
-
-		// backdrop colors
-		fl = fl.map((x,i) => setBackdrops(x, p.side[0].color[i]/255, p.side[1].color[i]/255));
-
-		// overlay
-		if (p.doOverlay) {
-			let fa = getOverlayAlp(a, p.densityOverlay);
-			fl = fl.map((x,i) => getOverlayLum(x, a, p.colorOverlay[i]/255, p.densityOverlay, fa));
-			a = fa;
-		}
-
-		// set values
-		fl = fl.map(x => x*255);
-		newData[i]   = fl[0];
-		newData[i+1] = fl[1];
-		newData[i+2] = fl[2];
-		newData[i+3] = a * 255;
-	}
-
-	return newData;
-}
-
-function imgData(back,img,fit,invert) {
+function getImgCanvas(back,img,fit,invert) {
 	let w = p.w, h = p.h,
 		canvas = new Canvas(w,h),
-		ctx = canvas.ctx;
+		ctx = canvas.getContext('2d');
 
 	// fit image
 	let iw, ih;
@@ -459,8 +531,7 @@ function imgData(back,img,fit,invert) {
 	if (invert) back = !back;
 
 	// set backgrounds
-	if (back) ctx.fillStyle = "#ffffff";
-	else ctx.fillStyle = "#000000";
+	ctx.fillStyle = back ? "#ffffff" : "#000000";
 	ctx.fillRect(0,0,w,h);
 
 	ctx.drawImage(img,(w-iw)/2,(h-ih)/2,iw,ih);
@@ -468,8 +539,96 @@ function imgData(back,img,fit,invert) {
 	// document.body.appendChild(canvas);
 	// document.body.appendChild(img);
 
-	return ctx.getImageData(0,0,w,h).data
+	return canvas;
 }
+
+function doShader(canvas1, canvas2) {
+	console.log("SHADE")
+
+	const canvas = new Canvas(p.w,p.h);
+	const gl = canvas.getContext("webgl", {premultipliedAlpha: false, antialias: false});
+	if (!gl) {console.log("no gl!"); return;}
+
+	const gsFunction = document.getElementById('grayscale');
+	const thisFS = document.getElementById('this-fs').innerHTML + gsFunction.innerHTML;
+	const diffFS = document.getElementById('diff-fs').innerHTML + gsFunction.innerHTML;
+
+	const programInfo = twgl.createProgramInfo(gl, ["this-vs", thisFS]);
+	const programInfoDiff = twgl.createProgramInfo(gl, ["this-vs", diffFS]);
+
+	const attributes = {
+		a_position: { numComponents: 2, data: getRectangle(0, 0, p.w, p.h) },
+		a_texCoord: { numComponents: 2, data: getRectangle(0, 0, 1, 1) },
+	};
+
+	const bufferInfo = twgl.createBufferInfoFromArrays(gl, attributes);
+
+	function getTextureFromSrc(src) {
+		return twgl.createTexture(gl, {
+			src: src,
+			wrap: gl.CLAMP_TO_EDGE,
+			minMag: gl.NEAREST
+		})
+	}
+
+	const tex1 = getTextureFromSrc(canvas1);
+	const tex2 = getTextureFromSrc(canvas2);
+
+	const uniforms = {
+		u_texture1: tex1,
+		u_texture2: tex2,
+		u_resolution: [p.w,p.h],
+		u_invert1: p.invert[0],
+		u_invert2: p.invert[1],
+		u_gray1: p.grayscale[0],
+		u_gray2: p.grayscale[1],
+		u_doAutoContrast: p.doAutoContrast,
+		u_contrastValue: p.contrastValue,
+		u_autoContrastValue: p.autoContrastValue,
+		u_bCol1: p.color[0].map(x => x / 255),
+		u_bCol2: p.color[1].map(x => x / 255),
+		u_doOverlay: p.doOverlay,
+		u_oDensity: p.overlayDensity,
+		u_oColor: p.overlayColor.map(x => x / 255),
+	};
+
+	function completeProgram(programInfo, bufferInfo, uniforms, fbi=null) {
+		gl.useProgram(programInfo.program);
+		twgl.bindFramebufferInfo(gl, fbi);
+		twgl.setUniforms(programInfo, uniforms);
+		twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+		twgl.drawBufferInfo(gl, bufferInfo);
+	}
+
+	const fbi = twgl.createFramebufferInfo(gl);
+	completeProgram(programInfoDiff, bufferInfo, uniforms, fbi);
+
+	let cval = maxPixel(gl, fbi.attachments[0], p.w, p.h) / 255;
+	cval = 1 / (cval + 1);
+	p.autoContrastValue = cval;
+	uniforms.u_autoContrastValue = cval;
+
+	completeProgram(programInfo, bufferInfo, uniforms);
+
+	return canvas;
+}
+
+function getRectangle(x, y, width, height) {
+	let x1 = x;
+	let x2 = x + width;
+	let y1 = y;
+	let y2 = y + height;
+	return new Float32Array([
+		x1, y1,
+		x2, y1,
+		x1, y2,
+		x1, y2,
+		x2, y1,
+		x2, y2
+	]);
+}
+
+
 
 function arrToRgb(arr) {
 	return "rgb("+arr[0]+","+arr[1]+","+arr[2]+")";
@@ -477,21 +636,6 @@ function arrToRgb(arr) {
 
 function hexToRgb(str) {
 	return str.match(/[A-Za-z0-9]{2}/g).map(function(x) {return parseInt(x,16)})
-}
-
-function callMultitask(callback,len,split,incr) {
-	var n = Math.ceil(len / split);
-	var p = len % split || split;
-	for (var i = 0; i < n; i++) {
-		var end = i === n - 1 ? i * split + p - 1 : (i + 1) * split - 1;
-		setTimeout(splitIteration.bind(null, callback, i * split, end, incr), 0)
-	}
-}
-
-function splitIteration(callback,start,end,incr=1) {
-	for (var i = start; i <= end; i += incr) {
-		callback(i)
-	}
 }
 
 </script>
