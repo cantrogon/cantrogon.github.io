@@ -1,53 +1,34 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Tester</title>
+		<title>Cantrogon</title>
 		<link rel="shortcut icon" type="image/png" href="images/favicons/favicon.png"/>
-		<style type="text/css">
-			@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
-			body {font-family: 'Open Sans', sans-serif;}
-			h1 {transform: rotate(180deg); font-size: 70px;}
-			h2 {font-weight: normal;}
-			#timer {font-size: 120px;}
-			#top {text-align: center;}
-			#list {margin: 0 auto; max-width: 650px; padding: 20px;}
-			.tab {box-shadow: 0 0 10px lightgrey; border-radius: 20px; padding: 5px 15px; margin-bottom: 20px; transition: transform .1s;}
-			.tab:hover {transform: translateY(-4px);}
-			a {text-decoration: none; color: initial;}
-		</style>
+		<link rel="stylesheet" href="css/index.css">
 	</head>
 	<body>
 		<div id="top">
 			<h1>Hello World</h1>
-			<h2>Time until this countdown timer reaches zero:</h2>
-			<span id="timer">-</span>
-			<script type="text/javascript">
-				// coutdown timer, pretty much just copied from w3schools
-				let endTime = "Dec 31, 2021 23:59:59";
-				document.body.onload = function() {
-					let timer = document.getElementById('timer');
-					let end = new Date(endTime).getTime();
-					let x = setInterval(function() {
-						let cur = new Date().getTime();
-						let d = end - cur;
-						let day = Math.floor(d / (1000 * 60 * 60 * 24));
-						let hrs = Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-						let min = Math.floor((d % (1000 * 60 * 60)) / (1000 * 60));
-						let sec = Math.floor((d % (1000 * 60)) / 1000);
-						timer.innerHTML = day + "d " + hrs + "h " + min + "m " + sec + "s ";
-						if (d < 0) {
-							clearInterval(x);
-							timer.innerHTML = "∞";
-						}
-					}, 1000);
-				}
-			</script>
 		</div>
 		<div id="list">
-			<h2>Stuff</h2><br>
+			<h2>Things that I've done</h2><br>
 			<a href="./wip/magicpng.html">
 				<div class="tab">
 					<p><b>Magic PNG.</b> Turn two images into one that switches between the two when placed on different colored backgrounds.</p>
+				</div>
+			</a>
+			<a href="./roomfind/demo2d.html">
+				<div class="tab">
+					<p><b>Room finder.</b> A demo for a search tool for rooms of buildings. Used is the University of Auckland Science Department.</p>
+				</div>
+			</a>
+			<a href="./wip/isomorphic.html">
+				<div class="tab">
+					<p><b>Isomorphic keyboard.</b> A 2-dimensional piano keyboard.</p>
+				</div>
+			</a>
+			<a href="./wip/justpiano.html">
+				<div class="tab">
+					<p><b>Justly tuned keyboard.</b> Changes pitch depending on what note is played.</p>
 				</div>
 			</a>
 			<a href="./wip/minesweeper.html">
@@ -70,16 +51,6 @@
 					<p><b>Pure CSS Connect Four.</b> The tin is really doing its rounds.</p>
 				</div>
 			</a>
-			<a href="./wip/isomorphic.html">
-				<div class="tab">
-					<p><b>Isomorphic keyboard.</b> A 2-dimensional piano keyboard.</p>
-				</div>
-			</a>
-			<a href="./wip/justpiano.html">
-				<div class="tab">
-					<p><b>Justly tuned keyboard.</b> Changes pitch depending on what note is played.</p>
-				</div>
-			</a>
 			<a href="./wip/maze.html">
 				<div class="tab">
 					<p><b>Maze.</b> Randomly generates a maze.</p>
@@ -88,11 +59,6 @@
 			<a href="./wip/hexcolorwords.html">
 				<div class="tab">
 					<p><b>Words of hex.</b> English words that are formed through hex color codes.</p>
-				</div>
-			</a>
-			<a href="./roomfind/demo2d.html">
-				<div class="tab">
-					<p><b>Room finder.</b> A demo for a search tool for rooms of buildings. Used is the University of Auckland Science Department.</p>
 				</div>
 			</a>
 		</div>
