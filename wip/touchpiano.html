@@ -1,0 +1,245 @@
+<div id="main">
+	<div id="white-box"></div>
+	<div id="black-box"></div>
+</div>
+
+<style>
+
+body {margin: 0;}
+
+#main {
+	width: 100%;
+	height: 100vh;
+	position: relative;
+	border: 10px solid white;
+	box-sizing: border-box;
+	font: 20px Verdana, sans-serif;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+#white-box, #black-box {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	justify-content: space-around;
+}
+
+.note {
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	position: relative;
+	cursor: pointer;
+	touch-action: none;
+	background-color: black;
+	color: white;
+}
+
+.note span {
+	display: block;
+	position: absolute;
+	bottom: 10px;
+	width: 100%;
+	text-align: center;
+	pointer-events: none;
+}
+
+.white {
+	border: 5px solid white;
+}
+
+#black-box {
+	height: 50%;
+	pointer-events: none;
+}
+
+.black {
+	border: 10px solid white;
+	border-top: none;
+	width: calc(100% / 14.5 - 20px);
+	pointer-events: auto;
+}
+
+.black:first-child 		{margin-left:  calc(100% / 14.5 / 2);}
+.black.gap 				{margin-right: calc(100% / 14.5);}
+.black:last-child 		{margin-right: calc(100% / 14.5 / 2);}
+.black.gap:last-child 	{margin-right: calc(100% / 14.5 * 3 / 2);}
+
+</style>
+
+<script>
+
+var notes = [], noteElms = [];
+var keys = ['q','2','w','3','e','r','5','t','6','y','7','u','i','9','o','0','p','[','=',']'];
+var noteNumber = 25;
+var baseFreq = 261.6;
+
+var justRatios = [1/1,16/15,9/8,6/5,5/4,4/3,45/32,3/2,8/5,5/3,9/5,15/8];
+var jr1 = justRatios.map(x => x*2), jr2 = [...justRatios,...jr1], jr3 = jr2.map(x => x/4), justRatios = [...jr3,...jr2];
+justRatios.push(4/1);
+var medianRatio = justRatios.indexOf(1);
+
+var touchedElms = [], mouseDown = false;
+var context = new AudioContext()
+
+setNoteElms(noteNumber)
+setNotes();
+
+function setNoteElms(noteNumber) {
+	for (var i = 0; i < noteNumber; i++) {
+		var note = document.createElement("div");
+		note.classList.add("note");
+
+		var whiteBox = document.getElementById('white-box'), 
+			blackBox = document.getElementById('black-box');
+		var blackNotes = [1,3,6,8,10];
+		if (blackNotes.includes(i%12)) {
+			note.classList.add("black");
+			if ((i%12 === 3 || i%12 === 10) && i !== noteNumber - 2)
+				note.classList.add("gap");
+			blackBox.appendChild(note);
+		} else {
+			note.classList.add("white");
+			whiteBox.appendChild(note);
+		}
+		noteElms.push(note);
+
+		notes[i] = {
+			elm: note,
+		}
+	}
+}
+
+function setNotes() {
+	noteElms.forEach((elm,i) => {
+		var freq = Math.pow(2, i * 1/12 + 7.948);
+
+		let tones = []
+		let gRates = [1,.2,.1,.06,.03]
+		let baseVol = 0.15
+		for (let j = 0; j < gRates.length; j++) {
+			let [o, g] = getNoteComponents(freq * (j + 1))
+			tones.push({o: o, g: g, gRate: baseVol * gRates[j]})
+		}
+		notes[i].tones = tones;
+
+		notes[i].attack = 0.015;
+		notes[i].decay = 0.045;
+
+		elm.setAttribute('pos',i);
+	})
+
+	var main = document.getElementById('main')
+	setEventListeners(noteElms,main,keys,noteOn,noteOff)
+}
+
+function getNoteComponents(freq) {
+	var o = context.createOscillator()
+	var g = context.createGain()
+	o.type = "sine"
+	o.connect(g)
+	o.frequency.value = freq
+	g.connect(context.destination)
+	return [o, g]
+}
+
+function noteOn(elm) {
+	var n = elm.getAttribute('pos'), note = notes[n];
+
+	elm.style.background = "teal";
+	elm.style.transition = "none";
+
+	if (!note.oStarted){
+		note.oStarted = true
+		for (let t of note.tones) {
+	   		t.g.gain.value = 0;
+	   		t.o.start();
+		}
+	}
+	for (let t of note.tones) {
+		t.g.gain.setTargetAtTime(t.gRate, context.currentTime, note.attack);
+	}
+}
+
+function noteOff(elm) {
+	var n = elm.getAttribute('pos'), note = notes[n];
+	elm.style.background = "black";
+	elm.style.transition = "background ease-out .7s";
+	for (let t of note.tones) {
+		t.g.gain.setTargetAtTime(0, context.currentTime, note.decay);
+	}
+}
+
+function setEventListeners(elms,container,keys,funcOn,funcOff) {
+
+	document.addEventListener("keydown", e => {
+		if (keys.includes(e.key))
+			funcOn(elms[keys.indexOf(e.key)]);
+	})
+
+	document.addEventListener("keyup", e => {
+		if (keys.includes(e.key))
+			funcOff(elms[keys.indexOf(e.key)]);
+	})
+
+	document.body.addEventListener("mousedown", e => mouseDown = true);
+	document.body.addEventListener("mouseup", e => mouseDown = false);
+
+	elms.forEach(elm => {
+			elm.addEventListener("mousedown", e => {e.preventDefault(); funcOn(elm)});
+			elm.addEventListener("mouseup", e => {e.preventDefault(); funcOff(elm)});
+			elm.addEventListener("mouseover", e => {e.preventDefault(); if (mouseDown) funcOn(elm)});
+			elm.addEventListener("mouseout", e => {e.preventDefault(); if (mouseDown) funcOff(elm)});
+	})
+
+	container.addEventListener("touchstart", e => {
+		e.preventDefault(); e.stopPropagation();
+		for (var i = 0; i < e.touches.length; i++) {
+			var touch = e.touches[i], n = touch.identifier, elm = document.elementFromPoint(touch.clientX,touch.clientY);
+			if (elm && elms.includes(elm) && !touchedElms.includes(elm)) {
+				funcOn(elm);
+				touchedElms[n] = elm;
+			}
+		}
+	})
+
+	container.addEventListener("touchend", e => {
+		e.preventDefault(); e.stopPropagation();
+		var touch = e.changedTouches[0], n = touch.identifier, prev = touchedElms[n], elm = document.elementFromPoint(touch.clientX,touch.clientY);
+		if (elm && elms.includes(elm)) {
+			touchedElms[n] = null;
+			if (prev && !touchedElms.includes(prev))
+				funcOff(prev);
+		}
+	})
+
+	container.addEventListener("touchmove", e => {
+		e.preventDefault(); e.stopPropagation();
+		for (var i = 0; i < e.changedTouches.length; i++) {
+			var touch = e.changedTouches[i], n = touch.identifier, prev = touchedElms[n], elm = document.elementFromPoint(touch.clientX,touch.clientY);
+			if (elm && elms.includes(elm) && elm !== prev) {
+				touchedElms[n] = null;
+				if (prev && !touchedElms.includes(prev))
+					funcOff(prev);
+				if (!touchedElms.includes(elm)) {
+					funcOn(elm);
+					touchedElms[n] = elm;
+				}
+			} else if (prev && elm !== prev) {
+				funcOff(prev);
+				touchedElms[n] = null;
+			}
+		}
+	})
+
+	container.addEventListener("touchcancel", e => {e.preventDefault(); e.stopPropagation();});
+
+}
+
+</script>
