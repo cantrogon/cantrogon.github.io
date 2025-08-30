@@ -141,6 +141,8 @@
       .hero-content { padding-right: 0; }
     }
 
+    br {margin: 5px auto;}
+
   </style>
 </head>
 <body>
@@ -304,7 +306,7 @@
                 }
                 iCard.appendChild(head);
                 // if (item.detail) { const p = document.createElement('div'); p.className = 'item-desc'; p.textContent = item.detail; iCard.appendChild(p); }
-                if (item.detail) { const p = document.createElement('div'); p.className = 'item-desc'; p.innerHTML = item.detail.replace("\n","<br>"); iCard.appendChild(p); }
+                if (item.detail) { const p = document.createElement('div'); p.className = 'item-desc'; p.innerHTML = item.detail.replaceAll("\n","<br>"); iCard.appendChild(p); }
                 items.appendChild(iCard);
               });
             }
